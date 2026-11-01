@@ -424,9 +424,13 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
         // Fix grid
         currentSpan = view.context.getSpanCount()
         binding?.searchAutofitResults?.spanCount =
-            if (bannerProvider != null) view.context.getSpanCount(isHorizontal = true) else currentSpan
+            if (useBannerCards(view.context)) view.context.getSpanCount(isHorizontal = true) else currentSpan
         HomeFragment.configEvent.invoke()
     }
+
+    private fun useBannerCards(context: android.content.Context): Boolean =
+        bannerProvider != null &&
+                (isLayout(TV or EMULATOR) || context.resources.configuration.screenWidthDp >= 600)
 
     override fun onBindingCreated(
         binding: FragmentSearchBinding,
@@ -435,10 +439,22 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
         reloadRepos()
         binding.apply {
             val isBanner = bannerProvider != null
+            // Wide banners suit TV and big screens, on a phone posters crop badly as banners
+            val wideCards = useBannerCards(root.context)
+            if (!isLayout(TV or EMULATOR)) {
+                // Keep the last row clear of the floating navigation bar
+                searchAutofitResults.clipToPadding = false
+                searchAutofitResults.setPadding(
+                    searchAutofitResults.paddingLeft,
+                    searchAutofitResults.paddingTop,
+                    searchAutofitResults.paddingRight,
+                    (96 * root.context.resources.displayMetrics.density).toInt()
+                )
+            }
             val adapter =
                 SearchAdapter(
                     searchAutofitResults,
-                    isHorizontal = isBanner,
+                    isHorizontal = wideCards,
                     forceTitle = isBanner,
                 ) { callback ->
                     SearchHelper.handleSearchClickCallback(callback)
