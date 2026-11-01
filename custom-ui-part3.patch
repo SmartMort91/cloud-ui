@@ -1,0 +1,225 @@
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/settings/SettingsUIScreen.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/settings/SettingsUIScreen.kt
+index 1092a9b..4183c8f 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/ui/settings/SettingsUIScreen.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/settings/SettingsUIScreen.kt
+@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.size
+ import androidx.compose.foundation.shape.CircleShape
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.runtime.Composable
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableIntStateOf
++import androidx.compose.runtime.remember
++import androidx.compose.runtime.setValue
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.res.integerArrayResource
+@@ -16,17 +20,22 @@ import androidx.compose.ui.res.painterResource
+ import androidx.compose.ui.res.stringArrayResource
+ import androidx.compose.ui.res.stringResource
+ import androidx.compose.ui.unit.dp
++import androidx.core.content.edit
++import androidx.preference.PreferenceManager
+ import com.lagradost.cloudstream3.CommonActivity.activity
+ import com.lagradost.cloudstream3.DubStatus
+ import com.lagradost.cloudstream3.MainActivity
+ import com.lagradost.cloudstream3.R
+ import com.lagradost.cloudstream3.SearchQuality
+ import com.lagradost.cloudstream3.mvvm.safe
++import com.lagradost.cloudstream3.ui.UiPrefs
+ import com.lagradost.cloudstream3.ui.clear
+ import com.lagradost.cloudstream3.ui.home.HomeChildItemAdapter
+ import com.lagradost.cloudstream3.ui.home.ParentItemAdapter
+ import com.lagradost.cloudstream3.ui.search.SearchAdapter
+ import com.lagradost.cloudstream3.ui.settings.Globals.updateTv
++import com.lagradost.cloudstream3.utils.AppContextUtils.filterProviderByPreferredMedia
++import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showBottomDialog
+ import com.lagradost.cloudstream3.utils.UIHelper.toPx
+ import com.lagradost.cloudstream4.compose.TV
+ import com.lagradost.cloudstream4.compose.isLayout
+@@ -75,11 +84,186 @@ object SettingsUIScreen : SearchableSettings {
+         )
+     }
+ 
++    /** Options saved per profile, see UiPrefs */
++    @Composable
++    private fun profileLayoutGroup(): Preference.PreferenceGroup {
++        var tick by remember { mutableIntStateOf(0) }
++        val refreshKey = tick // re-read so the subtitles refresh after a pick
++
++        val offText = stringResource(R.string.ui_search_provider_off)
++        val homeNames = listOf(
++            stringResource(R.string.ui_home_style_classic),
++            stringResource(R.string.ui_home_style_cinematic)
++        )
++        val homeValues = listOf(UiPrefs.HOME_CLASSIC, UiPrefs.HOME_CINEMATIC)
++        val focusNames = listOf(
++            stringResource(R.string.ui_focus_lift),
++            stringResource(R.string.ui_focus_border)
++        )
++        val focusValues = listOf(UiPrefs.FOCUS_LIFT, UiPrefs.FOCUS_BORDER)
++        val onOffNames = listOf(
++            stringResource(R.string.ui_switcher_on),
++            stringResource(R.string.ui_switcher_off)
++        )
++        val onOffValues = listOf("on", "off")
++
++        fun label(names: List<String>, values: List<String>, current: String) =
++            names[values.indexOf(current).coerceAtLeast(0)]
++
++        fun pick(
++            title: String,
++            names: List<String>,
++            values: List<String>,
++            current: String,
++            onPick: (String) -> Unit
++        ) {
++            activity?.showBottomDialog(
++                names,
++                values.indexOf(current).coerceAtLeast(0),
++                title,
++                true,
++                {}
++            ) {
++                onPick(values[it])
++                tick++
++            }
++        }
++
++        val searchTitle = stringResource(R.string.ui_search_provider_settings)
++        val homeTitle = stringResource(R.string.ui_home_style_settings)
++        val tilesTitle = stringResource(R.string.ui_home_tiles_settings)
++        val focusTitle = stringResource(R.string.ui_focus_style_settings)
++        val switcherTitle = stringResource(R.string.ui_provider_switcher_settings)
++
++        val navKey = stringResource(R.string.nav_labels_key)
++        val startKey = stringResource(R.string.start_tab_key)
++        val navTitle = stringResource(R.string.nav_labels_settings)
++        val startTitle = stringResource(R.string.start_tab_settings)
++        val navNames = listOf(
++            stringResource(R.string.nav_label_selected),
++            stringResource(R.string.nav_label_always),
++            stringResource(R.string.nav_label_hidden)
++        )
++        val navValues = listOf("selected", "labeled", "unlabeled")
++        val startNames = listOf(
++            stringResource(R.string.title_home),
++            stringResource(R.string.title_search),
++            stringResource(R.string.library),
++            stringResource(R.string.title_downloads)
++        )
++        val startValues = listOf("home", "search", "library", "downloads")
++        fun sharedString(key: String, default: String): String =
++            activity?.let { PreferenceManager.getDefaultSharedPreferences(it).getString(key, default) }
++                ?: default
++
++        return Preference.PreferenceGroup(
++            title = stringResource(R.string.pref_category_profile_layout),
++            preferenceItems = persistentListOf(
++                Preference.PreferenceItem.TextPreference(
++                    title = searchTitle,
++                    subtitle = UiPrefs.searchProvider ?: offText,
++                    onClick = {
++                        val providers = (activity?.filterProviderByPreferredMedia(
++                            hasHomePageIsRequired = false
++                        ) ?: emptyList()).map { it.name }.distinct().sortedBy { it.lowercase() }
++                        val before = UiPrefs.searchProvider
++                        pick(
++                            searchTitle,
++                            listOf(offText) + providers,
++                            listOf("") + providers,
++                            before ?: ""
++                        ) {
++                            UiPrefs.searchProvider = it.ifBlank { null }
++                            // Switching between normal and banner search changes the layout
++                            if ((before == null) != (UiPrefs.searchProvider == null)) {
++                                safe { activity?.recreate() }
++                            }
++                        }
++                    }
++                ),
++                Preference.PreferenceItem.TextPreference(
++                    title = homeTitle,
++                    subtitle = label(
++                        homeNames, homeValues,
++                        UiPrefs.getOpt(UiPrefs.HOME_STYLE, UiPrefs.HOME_CLASSIC)
++                    ),
++                    onClick = {
++                        pick(
++                            homeTitle, homeNames, homeValues,
++                            UiPrefs.getOpt(UiPrefs.HOME_STYLE, UiPrefs.HOME_CLASSIC)
++                        ) { UiPrefs.putOpt(UiPrefs.HOME_STYLE, it) }
++                    }
++                ),
++                Preference.PreferenceItem.TextPreference(
++                    title = tilesTitle,
++                    subtitle = label(
++                        onOffNames, onOffValues, UiPrefs.getOpt(UiPrefs.HOME_TILES, "on")
++                    ),
++                    onClick = {
++                        pick(
++                            tilesTitle, onOffNames, onOffValues,
++                            UiPrefs.getOpt(UiPrefs.HOME_TILES, "on")
++                        ) { UiPrefs.putOpt(UiPrefs.HOME_TILES, it) }
++                    }
++                ),
++                Preference.PreferenceItem.TextPreference(
++                    title = focusTitle,
++                    subtitle = label(
++                        focusNames, focusValues,
++                        UiPrefs.getOpt(UiPrefs.FOCUS_STYLE, UiPrefs.FOCUS_LIFT)
++                    ),
++                    onClick = {
++                        pick(
++                            focusTitle, focusNames, focusValues,
++                            UiPrefs.getOpt(UiPrefs.FOCUS_STYLE, UiPrefs.FOCUS_LIFT)
++                        ) { UiPrefs.putOpt(UiPrefs.FOCUS_STYLE, it) }
++                    }
++                ),
++                Preference.PreferenceItem.TextPreference(
++                    title = switcherTitle,
++                    subtitle = label(
++                        onOffNames, onOffValues, UiPrefs.getOpt(UiPrefs.PROVIDER_SWITCHER, "on")
++                    ),
++                    onClick = {
++                        pick(
++                            switcherTitle, onOffNames, onOffValues,
++                            UiPrefs.getOpt(UiPrefs.PROVIDER_SWITCHER, "on")
++                        ) { UiPrefs.putOpt(UiPrefs.PROVIDER_SWITCHER, it) }
++                    }
++                ),
++                Preference.PreferenceItem.TextPreference(
++                    title = navTitle,
++                    subtitle = label(navNames, navValues, sharedString(navKey, "selected")),
++                    onClick = {
++                        pick(navTitle, navNames, navValues, sharedString(navKey, "selected")) {
++                            activity?.let { a ->
++                                PreferenceManager.getDefaultSharedPreferences(a).edit { putString(navKey, it) }
++                            }
++                            safe { activity?.recreate() }
++                        }
++                    }
++                ),
++                Preference.PreferenceItem.TextPreference(
++                    title = startTitle,
++                    subtitle = label(startNames, startValues, sharedString(startKey, "home")),
++                    onClick = {
++                        pick(startTitle, startNames, startValues, sharedString(startKey, "home")) {
++                            activity?.let { a ->
++                                PreferenceManager.getDefaultSharedPreferences(a).edit { putString(startKey, it) }
++                            }
++                        }
++                    }
++                ),
++            )
++        )
++    }
++
+     @Composable
+     override fun getPreferences(): List<Preference> {
+         val settings = rememberAppSettings()
+ 
+         return persistentListOf(
++            profileLayoutGroup(),
+             Preference.PreferenceGroup(
+                 title = stringResource(R.string.pref_category_looks),
+                 preferenceItems = persistentListOf(
