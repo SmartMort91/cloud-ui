@@ -1,0 +1,97 @@
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/player/GeneratorPlayer.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/player/GeneratorPlayer.kt
+index e4616c9..b0439fa 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/ui/player/GeneratorPlayer.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/player/GeneratorPlayer.kt
+@@ -1134,31 +1134,72 @@ class GeneratorPlayer : FullScreenPlayer() {
+                         startSource = filteredLinks.indexOfFirst { it.link == currentLinkUsed }
+                         sourceIndex = startSource
+ 
+-                        val sourcesArrayAdapter =
+-                            ArrayAdapter<String>(ctx, R.layout.sort_bottom_single_choice)
+-
+-                        sourcesArrayAdapter.addAll(filteredLinks.map { displayLink ->
+-                            val (link, uri) = displayLink.link
+-                            val name = link?.name ?: uri?.name ?: "NULL"
+-                            "$name ${Qualities.getStringByInt(link?.quality)}"
+-                        })
+-
+-                        providerList.choiceMode = AbsListView.CHOICE_MODE_SINGLE
+-                        providerList.adapter = sourcesArrayAdapter
+-                        providerList.setSelection(sourceIndex)
+-                        providerList.setItemChecked(sourceIndex, true)
++                        // Group the links by resolution into collapsible headers.
++                        // A row is either a header (quality key) or a link (index into filteredLinks).
++                        val qualityOf = { dl: DisplayLink ->
++                            dl.link.first?.quality ?: Qualities.Unknown.value
++                        }
++                        val groupOrder = filteredLinks.map(qualityOf).distinct()
++                        val expanded = HashSet<Int>()
++                        filteredLinks.getOrNull(startSource)?.let { expanded.add(qualityOf(it)) }
++                        if (expanded.isEmpty()) groupOrder.firstOrNull()?.let { expanded.add(it) }
++
++                        // Row = Pair(quality, linkIndex) where linkIndex == -1 means header
++                        var rows: List<Pair<Int, Int>> = emptyList()
++
++                        fun renderSources() {
++                            val newRows = ArrayList<Pair<Int, Int>>()
++                            for (q in groupOrder) {
++                                newRows.add(q to -1)
++                                if (expanded.contains(q)) {
++                                    filteredLinks.forEachIndexed { i, dl ->
++                                        if (qualityOf(dl) == q) newRows.add(q to i)
++                                    }
++                                }
++                            }
++                            rows = newRows
++                            val adapter =
++                                ArrayAdapter<String>(ctx, R.layout.sort_bottom_single_choice)
++                            adapter.addAll(rows.map { (q, i) ->
++                                if (i < 0) {
++                                    val count = filteredLinks.count { qualityOf(it) == q }
++                                    val arrow = if (expanded.contains(q)) "\u25BE" else "\u25B8"
++                                    "$arrow  ${Qualities.getStringByIntFull(q)}  \u00B7  $count"
++                                } else {
++                                    val (link, uri) = filteredLinks[i].link
++                                    "      ${link?.name ?: uri?.name ?: "NULL"}"
++                                }
++                            })
++                            providerList.choiceMode = AbsListView.CHOICE_MODE_SINGLE
++                            providerList.adapter = adapter
++                            val pos = rows.indexOfFirst { it.second == sourceIndex }
++                            if (pos >= 0) {
++                                providerList.setSelection(pos)
++                                providerList.setItemChecked(pos, true)
++                            }
++                        }
++                        renderSources()
+ 
+                         providerList.setOnItemClickListener { _, _, which, _ ->
+-                            sourceIndex = which
+-                            providerList.setItemChecked(which, true)
++                            val row = rows.getOrNull(which) ?: return@setOnItemClickListener
++                            if (row.second < 0) {
++                                if (!expanded.remove(row.first)) expanded.add(row.first)
++                                renderSources()
++                            } else {
++                                sourceIndex = row.second
++                                providerList.setItemChecked(which, true)
++                            }
+                         }
+ 
+                         providerList.setOnItemLongClickListener { _, _, position, _ ->
+-                            sortedLinks.getOrNull(position)?.link?.first?.url?.let {
+-                                clipboardHelper(
+-                                    txt(R.string.video_source),
+-                                    it
+-                                )
++                            val idx = rows.getOrNull(position)?.second ?: -1
++                            if (idx >= 0) {
++                                filteredLinks.getOrNull(idx)?.link?.first?.url?.let {
++                                    clipboardHelper(
++                                        txt(R.string.video_source),
++                                        it
++                                    )
++                                }
+                             }
+                             true
+                         }
