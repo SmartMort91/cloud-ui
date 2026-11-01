@@ -700,6 +700,14 @@ open class ResultFragmentPhone : BaseFragment<FragmentResultSwipeBinding>(
             }
         }
 
+        resultBinding?.resultRelatedList?.apply {
+            spanCount = 3
+            setRecycledViewPool(SearchAdapter.sharedPool)
+            adapter = SearchAdapter(this) { callback ->
+                SearchHelper.handleSearchClickCallback(callback)
+            }
+        }
+
         recommendationBinding?.apply {
             resultRecommendationsList.apply {
                 spanCount = 3
@@ -1469,8 +1477,19 @@ open class ResultFragmentPhone : BaseFragment<FragmentResultSwipeBinding>(
             }
         }
 
+        resultBinding?.apply {
+            resultRelatedHolder.isGone = isInvalid
+            resultRelatedList.post {
+                rec?.let { list ->
+                    (resultRelatedList.adapter as? SearchAdapter)
+                        ?.submitList(list.filter { it.apiName == matchAgainst })
+                }
+            }
+        }
+
         binding?.apply {
-            resultRecommendationsBtt.isGone = isInvalid
+            // Related titles are shown on the page now, so the side panel button is not needed
+            resultRecommendationsBtt.isGone = true
             resultRecommendationsBtt.setOnClickListener {
                 val nextFocusDown = if (resultOverlappingPanels.getSelectedPanel().ordinal == 1) {
                     resultOverlappingPanels.openEndPanel()
@@ -1486,7 +1505,7 @@ open class ResultFragmentPhone : BaseFragment<FragmentResultSwipeBinding>(
                     resultShare.nextFocusDownId = nextFocusDown
                 }
             }
-            resultOverlappingPanels.setEndPanelLockState(if (isInvalid) OverlappingPanelsLayout.LockState.CLOSE else OverlappingPanelsLayout.LockState.UNLOCKED)
+            resultOverlappingPanels.setEndPanelLockState(OverlappingPanelsLayout.LockState.CLOSE)
 
             rec?.map { it.apiName }?.distinct()?.let { apiNames ->
                 // very dirty selection

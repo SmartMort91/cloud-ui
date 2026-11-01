@@ -109,6 +109,7 @@
     <string name="subscribe_tooltip">New episode notification</string>
     <string name="result_search_tooltip">Search in other extensions</string>
     <string name="recommendations_tooltip">Show recommendations</string>
+    <string name="result_related_title">More like this</string>
     <string name="player_speed">Player Speed</string>
     <string name="subtitles_settings">Subtitle Settings</string>
     <string name="subs_text_color">Text Color</string>
