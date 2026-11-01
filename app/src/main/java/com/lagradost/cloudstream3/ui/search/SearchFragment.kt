@@ -428,9 +428,10 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
         HomeFragment.configEvent.invoke()
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun useBannerCards(context: android.content.Context): Boolean =
         bannerProvider != null &&
-                (isLayout(TV or EMULATOR) || context.resources.configuration.screenWidthDp >= 600)
+                (isLayout(TV or EMULATOR) || isLandscape())
 
     override fun onBindingCreated(
         binding: FragmentSearchBinding,
