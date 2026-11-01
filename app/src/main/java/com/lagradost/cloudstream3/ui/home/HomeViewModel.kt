@@ -53,6 +53,8 @@ import com.lagradost.cloudstream3.utils.DataStoreHelper.getViewPos
 import com.lagradost.cloudstream3.utils.downloader.DownloadObjects
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.EnumSet
 import java.util.concurrent.CopyOnWriteArrayList
@@ -362,42 +364,52 @@ class HomeViewModel : ViewModel() {
 
                     val items = data.value.mapNotNull { it?.items }.flatten()
 
-
                     previewResponses.clear()
                     previewResponsesAdded.clear()
 
-                    //val home = data.value
-                    if (items.isNotEmpty()) {
-                        val currentList =
-                            items.shuffled().filter { it.list.isNotEmpty() }
-                                .flatMap { it.list }
-                                .distinctBy { it.url }.toList()
-
-                        if (currentList.isNotEmpty()) {
-                            val randomItems =
-                                context?.filterSearchResultByFilmQuality(currentList.shuffled())
-                                    ?: currentList.shuffled()
-
-                            updatePreviewResponses(
-                                previewResponses,
-                                previewResponsesAdded,
-                                randomItems,
-                                2
-                            )
-
-                            _randomItems.postValue(randomItems)
-                            currentShuffledList = randomItems
+                    // The hero titles load in the background so a slow provider never holds
+                    // the rows back. If they take too long the hero is skipped for now and
+                    // appears as soon as it is ready.
+                    addJob = ioSafe {
+                        val timer = launch {
+                            delay(6000)
+                            if (_preview.value is Resource.Loading) {
+                                _preview.postValue(Resource.Failure(false, "Hero is slow"))
+                            }
                         }
-                    }
-                    if (previewResponses.isEmpty()) {
-                        _preview.postValue(
-                            Resource.Failure(
-                                false,
-                                "No homepage responses"
-                            )
-                        )
-                    } else {
-                        _preview.postValue(Resource.Success((previewResponsesAdded.size < currentShuffledList.size) to previewResponses))
+                        try {
+                            if (items.isNotEmpty()) {
+                                val currentList =
+                                    items.shuffled().filter { it.list.isNotEmpty() }
+                                        .flatMap { it.list }
+                                        .distinctBy { it.url }.toList()
+
+                                if (currentList.isNotEmpty()) {
+                                    val randomItems =
+                                        context?.filterSearchResultByFilmQuality(currentList.shuffled())
+                                            ?: currentList.shuffled()
+
+                                    currentShuffledList = randomItems
+                                    _randomItems.postValue(randomItems)
+
+                                    updatePreviewResponses(
+                                        previewResponses,
+                                        previewResponsesAdded,
+                                        randomItems,
+                                        2
+                                    )
+                                }
+                            }
+                            if (previewResponses.isEmpty()) {
+                                _preview.postValue(
+                                    Resource.Failure(false, "No homepage responses")
+                                )
+                            } else {
+                                _preview.postValue(Resource.Success((previewResponsesAdded.size < currentShuffledList.size) to previewResponses))
+                            }
+                        } finally {
+                            timer.cancel()
+                        }
                     }
                 } catch (e: Exception) {
                     _randomItems.postValue(emptyList())
