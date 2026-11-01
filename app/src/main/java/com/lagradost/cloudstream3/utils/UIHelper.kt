@@ -109,6 +109,7 @@ object UIHelper {
         tags: List<String>,
         @StyleRes style: Int = R.style.ChipFilled,
         @AttrRes textColor: Int? = R.attr.white,
+        onTagClick: ((String) -> Unit)? = null,
     ) {
         if (view == null) return
         view.removeAllViews()
@@ -127,8 +128,9 @@ object UIHelper {
             chip.text = tag
             chip.isChecked = false
             chip.isCheckable = false
-            chip.isFocusable = false
-            chip.isClickable = false
+            chip.isFocusable = onTagClick != null
+            chip.isClickable = onTagClick != null
+            onTagClick?.let { click -> chip.setOnClickListener { click(tag) } }
             textColor?.let {
                 chip.setTextColor(context.colorFromAttribute(it))
             }

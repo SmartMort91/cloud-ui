@@ -59,6 +59,7 @@ import com.lagradost.cloudstream3.ui.APIRepository
 import com.lagradost.cloudstream3.ui.BaseAdapter
 import com.lagradost.cloudstream3.ui.BaseFragment
 import com.lagradost.cloudstream3.ui.home.HomeFragment
+import com.lagradost.cloudstream3.ui.home.TagBrowse
 import com.lagradost.cloudstream3.ui.home.HomeFragment.Companion.bindChips
 import com.lagradost.cloudstream3.ui.home.HomeFragment.Companion.currentSpan
 import com.lagradost.cloudstream3.ui.home.HomeFragment.Companion.loadHomepageList
@@ -460,6 +461,21 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
                 ) { callback ->
                     SearchHelper.handleSearchClickCallback(callback)
                 }
+
+            if (!isLayout(TV or EMULATOR)) {
+                // Quick tag (genre) filters under the search bar
+                var header: android.view.ViewParent? = mainSearch.parent
+                while (header != null &&
+                    !(header is LinearLayout && header.orientation == LinearLayout.VERTICAL)
+                ) header = header.parent
+                (header as? LinearLayout)?.addView(
+                    TagBrowse.buildTagRow(root.context) {
+                        bannerProvider
+                            ?: DataStoreHelper.currentHomePage
+                            ?: root.context.filterProviderByPreferredMedia(false).firstOrNull()?.name
+                    }
+                )
+            }
 
             searchRoot.findViewById<TextView>(androidx.appcompat.R.id.search_src_text)?.tag =
                 "tv_no_focus_tag"

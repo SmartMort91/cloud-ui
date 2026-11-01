@@ -31,6 +31,7 @@ import com.lagradost.cloudstream3.mvvm.observeNullable
 import com.lagradost.cloudstream3.services.SubscriptionWorkManager
 import com.lagradost.cloudstream3.ui.BaseFragment
 import com.lagradost.cloudstream3.ui.WatchType
+import com.lagradost.cloudstream3.ui.home.TagBrowse
 import com.lagradost.cloudstream3.ui.download.DownloadButtonSetup
 import com.lagradost.cloudstream3.ui.player.ExtractorLinkGenerator
 import com.lagradost.cloudstream3.ui.player.GeneratorPlayer
@@ -932,7 +933,9 @@ class ResultFragmentTv : BaseFragment<FragmentResultTvBinding>(
                         comingSoon = d.comingSoon
                         resultTvComingSoon.isVisible = d.comingSoon
 
-                        populateChips(resultTag, d.tags)
+                        populateChips(resultTag, d.tags, onTagClick = { tag ->
+                            context?.let { TagBrowse.open(it, tag, d.apiName) }
+                        })
                         val prefs =
                             androidx.preference.PreferenceManager.getDefaultSharedPreferences(root.context)
                         val showCast = prefs.getBoolean(

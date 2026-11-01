@@ -206,7 +206,8 @@ object HomeBrowse {
         items: List<SearchResponse>,
         providerName: String?,
         initial: Category,
-        initialSort: Sort = Sort.DEFAULT
+        initialSort: Sort = Sort.DEFAULT,
+        title: String? = null
     ) {
         val dialog = BottomSheetDialog(context)
         val binding = BrowseSheetBinding.inflate(LayoutInflater.from(context))
@@ -217,6 +218,7 @@ object HomeBrowse {
         dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
         dialog.behavior.skipCollapsed = true
 
+        title?.let { binding.browseTitle.text = it }
         binding.browseSubtitle.text =
             providerName?.let { context.getString(R.string.browse_from, it) } ?: ""
 

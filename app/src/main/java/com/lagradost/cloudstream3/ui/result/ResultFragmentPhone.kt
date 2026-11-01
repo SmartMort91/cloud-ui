@@ -68,6 +68,8 @@ import com.lagradost.cloudstream3.ui.quicksearch.QuickSearchFragment
 import com.lagradost.cloudstream3.ui.result.ResultFragment.bindLogo
 import com.lagradost.cloudstream3.ui.result.ResultFragment.getStoredData
 import com.lagradost.cloudstream3.ui.result.ResultFragment.updateUIEvent
+import com.lagradost.cloudstream3.ui.home.HomeChildItemAdapter
+import com.lagradost.cloudstream3.ui.home.TagBrowse
 import com.lagradost.cloudstream3.ui.search.SearchAdapter
 import com.lagradost.cloudstream3.ui.search.SearchHelper
 import com.lagradost.cloudstream3.ui.setRecycledViewPool
@@ -701,11 +703,12 @@ open class ResultFragmentPhone : BaseFragment<FragmentResultSwipeBinding>(
         }
 
         resultBinding?.resultRelatedList?.apply {
-            spanCount = 3
-            setRecycledViewPool(SearchAdapter.sharedPool)
-            adapter = SearchAdapter(this) { callback ->
-                SearchHelper.handleSearchClickCallback(callback)
-            }
+            HomeChildItemAdapter.updatePosterSize(context)
+            setRecycledViewPool(HomeChildItemAdapter.sharedPool)
+            adapter = HomeChildItemAdapter(
+                id = "resultRelated".hashCode(),
+                clickCallback = { callback -> SearchHelper.handleSearchClickCallback(callback) }
+            )
         }
 
         recommendationBinding?.apply {
@@ -1003,7 +1006,9 @@ open class ResultFragmentPhone : BaseFragment<FragmentResultSwipeBinding>(
                         }
                     }
 
-                    populateChips(resultTag, d.tags)
+                    populateChips(resultTag, d.tags, onTagClick = { tag ->
+                        context?.let { TagBrowse.open(it, tag, d.apiName) }
+                    })
 
                     resultComingSoon.isVisible = d.comingSoon
                     resultDataHolder.isGone = d.comingSoon
@@ -1481,7 +1486,7 @@ open class ResultFragmentPhone : BaseFragment<FragmentResultSwipeBinding>(
             resultRelatedHolder.isGone = isInvalid
             resultRelatedList.post {
                 rec?.let { list ->
-                    (resultRelatedList.adapter as? SearchAdapter)
+                    (resultRelatedList.adapter as? HomeChildItemAdapter)
                         ?.submitList(list.filter { it.apiName == matchAgainst })
                 }
             }
