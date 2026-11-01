@@ -112,6 +112,7 @@
     <string name="result_related_title">More like this</string>
     <string name="tag_browse_no_provider">No provider to search for this tag</string>
     <string name="tag_browse_loading">Finding titles tagged %1$s…</string>
+    <string name="tag_browse_progress">%1$s: %2$d found, checked %3$d of %4$d titles</string>
     <string name="tag_browse_empty">No titles found for %1$s</string>
     <string name="player_speed">Player Speed</string>
     <string name="subtitles_settings">Subtitle Settings</string>

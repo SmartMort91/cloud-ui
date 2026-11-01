@@ -207,8 +207,9 @@ object HomeBrowse {
         providerName: String?,
         initial: Category,
         initialSort: Sort = Sort.DEFAULT,
-        title: String? = null
-    ) {
+        title: String? = null,
+        loading: Boolean = false
+    ): Handle {
         val dialog = BottomSheetDialog(context)
         val binding = BrowseSheetBinding.inflate(LayoutInflater.from(context))
         val height = (context.resources.displayMetrics.heightPixels * 0.92f).toInt()
@@ -224,6 +225,8 @@ object HomeBrowse {
 
         var category = initial
         var sort = initialSort
+        var data = items
+        var stillLoading = loading
 
         val adapter = SearchAdapter(binding.browseResults) { callback ->
             if (callback.action == SEARCH_ACTION_LOAD) dialog.dismiss()
@@ -233,9 +236,9 @@ object HomeBrowse {
         binding.browseResults.adapter = adapter
 
         fun refresh() {
-            val list = sorted(filter(items, category), sort)
+            val list = sorted(filter(data, category), sort)
             adapter.submitList(list)
-            binding.browseEmpty.isVisible = list.isEmpty()
+            binding.browseEmpty.isVisible = list.isEmpty() && !stillLoading
             binding.browseResults.isVisible = list.isNotEmpty()
         }
 
@@ -283,5 +286,21 @@ object HomeBrowse {
 
         refresh()
         dialog.show()
+
+        return Handle(
+            update = { list, subtitle, done ->
+                data = list
+                stillLoading = !done
+                subtitle?.let { binding.browseSubtitle.text = it }
+                refresh()
+            },
+            isShowing = { dialog.isShowing }
+        )
     }
+
+    /** Lets the caller fill the sheet in while it is open, for results that arrive over time */
+    class Handle(
+        val update: (items: List<SearchResponse>, subtitle: String?, done: Boolean) -> Unit,
+        val isShowing: () -> Boolean
+    )
 }

@@ -9,26 +9,49 @@ import android.widget.TextView
 import android.widget.Toast
 import com.lagradost.cloudstream3.APIHolder.getApiFromNameNull
 import com.lagradost.cloudstream3.R
+import com.lagradost.cloudstream3.amap
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.mvvm.Resource
 import com.lagradost.cloudstream3.ui.APIRepository
 import com.lagradost.cloudstream3.utils.Coroutines.ioSafe
 import com.lagradost.cloudstream3.utils.Coroutines.main
 import com.lagradost.cloudstream3.utils.UIHelper.toPx
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * Tags (genres) are not part of the shared provider API, so there is no exact "titles with this
- * tag" request. This does the best that every provider allows:
- *  1. if the provider has a home page list named like the tag (many have genre lists) that list is used
- *  2. otherwise the provider is searched for the tag text
- * The result opens in the browse sheet, so it can be sorted by rating, date or name.
+ * Tags (genres) are not part of the shared provider API, so there is no request for "titles with
+ * this tag". Instead this checks real tags: it takes the titles the provider shows on its home page
+ * plus the provider's search results for the tag word, loads each title's details and keeps only
+ * the ones that really carry the tag. The browse sheet opens at once and fills in as titles are
+ * checked, so it works with every provider but only covers a limited number of titles.
  */
 object TagBrowse {
+    private const val MAX_CANDIDATES = 60
+    private const val BATCH_SIZE = 8
+    private const val LOAD_TIMEOUT_MS = 12000L
+
     /** Tags offered as quick filters in the search tab */
     val commonTags = listOf(
         "Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama",
         "Family", "Fantasy", "Horror", "Mystery", "Romance", "Sci-Fi", "Thriller", "War"
     )
+
+    private val aliases = mapOf(
+        "sci fi" to listOf("science fiction", "sci fi", "scifi"),
+        "documentary" to listOf("documentary", "docu"),
+        "animation" to listOf("animation", "animated"),
+    )
+
+    private fun norm(text: String): String =
+        text.lowercase().replace(Regex("[^\\p{L}\\p{N}]+"), " ").trim()
+
+    private fun hasTag(tags: List<String>?, tag: String): Boolean {
+        val wanted = aliases[norm(tag)] ?: listOf(norm(tag))
+        return tags.orEmpty().any { t ->
+            val n = norm(t)
+            wanted.any { w -> n == w || n.contains(w) }
+        }
+    }
 
     fun open(context: Context, tag: String, apiName: String?) {
         val api = apiName?.let { getApiFromNameNull(it) }
@@ -36,39 +59,63 @@ object TagBrowse {
             Toast.makeText(context, R.string.tag_browse_no_provider, Toast.LENGTH_SHORT).show()
             return
         }
-        Toast.makeText(context, context.getString(R.string.tag_browse_loading, tag), Toast.LENGTH_SHORT).show()
+
+        val handle = HomeBrowse.show(
+            context, emptyList(), api.name, HomeBrowse.Category.ALL, title = tag, loading = true
+        )
+        handle.update(emptyList(), context.getString(R.string.tag_browse_loading, tag), false)
 
         context.ioSafe {
             val repo = APIRepository(api)
-            var items: List<SearchResponse> = emptyList()
+            val candidates = LinkedHashMap<String, SearchResponse>()
 
-            val listIndex = api.mainPage.indexOfFirst {
-                it.name.isNotBlank() && it.name.contains(tag, ignoreCase = true)
-            }
-            if (listIndex >= 0) {
-                val res = repo.getMainPage(1, listIndex)
-                if (res is Resource.Success) {
-                    items = res.value.filterNotNull().flatMap { page ->
-                        page.items.flatMap { it.list }
+            val home = repo.getMainPage(1, null)
+            if (home is Resource.Success) {
+                home.value.filterNotNull().forEach { page ->
+                    page.items.forEach { list ->
+                        list.list.forEach { candidates.putIfAbsent(it.url, it) }
                     }
                 }
             }
-            if (items.isEmpty()) {
-                val res = repo.search(tag, 1)
-                if (res is Resource.Success) items = res.value.items
+            val found = repo.search(tag, 1)
+            if (found is Resource.Success) {
+                found.value.items.forEach { candidates.putIfAbsent(it.url, it) }
             }
 
-            val unique = items.distinctBy { it.url }
-            main {
-                if (unique.isEmpty()) {
-                    Toast.makeText(
-                        context,
+            val pool = candidates.values.take(MAX_CANDIDATES)
+            if (pool.isEmpty()) {
+                main {
+                    handle.update(
+                        emptyList(),
                         context.getString(R.string.tag_browse_empty, tag),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    HomeBrowse.show(
-                        context, unique, api.name, HomeBrowse.Category.ALL, title = tag
+                        true
+                    )
+                }
+            }
+
+            val matched = ArrayList<SearchResponse>()
+            var checked = 0
+            for (batch in pool.chunked(BATCH_SIZE)) {
+                if (!handle.isShowing()) break
+                val results = batch.amap { item ->
+                    item to withTimeoutOrNull(LOAD_TIMEOUT_MS) { repo.load(item.url) }
+                }
+                for ((item, res) in results) {
+                    if (res is Resource.Success && hasTag(res.value.tags, tag)) matched.add(item)
+                }
+                checked += batch.size
+
+                val snapshot = matched.toList()
+                val done = checked >= pool.size
+                val checkedNow = checked
+                main {
+                    handle.update(
+                        snapshot,
+                        context.getString(
+                            R.string.tag_browse_progress,
+                            tag, snapshot.size, checkedNow, pool.size
+                        ),
+                        done
                     )
                 }
             }
