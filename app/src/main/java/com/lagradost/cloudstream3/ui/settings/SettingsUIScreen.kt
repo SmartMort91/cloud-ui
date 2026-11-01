@@ -185,12 +185,12 @@ object SettingsUIScreen : SearchableSettings {
                     title = homeTitle,
                     subtitle = label(
                         homeNames, homeValues,
-                        UiPrefs.getOpt(UiPrefs.HOME_STYLE, UiPrefs.HOME_CLASSIC)
+                        UiPrefs.getOpt(UiPrefs.HOME_STYLE, UiPrefs.HOME_DEFAULT)
                     ),
                     onClick = {
                         pick(
                             homeTitle, homeNames, homeValues,
-                            UiPrefs.getOpt(UiPrefs.HOME_STYLE, UiPrefs.HOME_CLASSIC)
+                            UiPrefs.getOpt(UiPrefs.HOME_STYLE, UiPrefs.HOME_DEFAULT)
                         ) { UiPrefs.putOpt(UiPrefs.HOME_STYLE, it) }
                     }
                 ),

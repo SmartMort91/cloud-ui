@@ -145,7 +145,7 @@ class SettingsUI : BasePreferenceFragmentCompat() {
             getPref(R.string.ui_search_provider_key)?.summary = UiPrefs.searchProvider ?: offText
             getPref(R.string.ui_home_style_key)?.summary =
                 homeStyleNames[homeStyleValues.indexOf(
-                    UiPrefs.getOpt(UiPrefs.HOME_STYLE, UiPrefs.HOME_CLASSIC)
+                    UiPrefs.getOpt(UiPrefs.HOME_STYLE, UiPrefs.HOME_DEFAULT)
                 ).coerceAtLeast(0)]
             getPref(R.string.ui_home_tiles_key)?.summary =
                 onOffNames[onOffValues.indexOf(
@@ -198,7 +198,7 @@ class SettingsUI : BasePreferenceFragmentCompat() {
                 R.string.ui_home_style_settings,
                 homeStyleNames,
                 homeStyleValues,
-                UiPrefs.getOpt(UiPrefs.HOME_STYLE, UiPrefs.HOME_CLASSIC)
+                UiPrefs.getOpt(UiPrefs.HOME_STYLE, UiPrefs.HOME_DEFAULT)
             ) { UiPrefs.putOpt(UiPrefs.HOME_STYLE, it) }
             return@setOnPreferenceClickListener true
         }

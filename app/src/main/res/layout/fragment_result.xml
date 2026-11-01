@@ -269,7 +269,7 @@
                 <FrameLayout
                     android:id="@+id/result_top_holder"
                     android:layout_width="match_parent"
-                    android:layout_height="200dp">
+                    android:layout_height="300dp">
 
                     <FrameLayout
                         android:id="@+id/result_smallscreen_holder"
@@ -295,7 +295,7 @@
 
                         <View
                             android:layout_width="match_parent"
-                            android:layout_height="60dp"
+                            android:layout_height="170dp"
                             android:layout_gravity="bottom"
                             android:background="@drawable/background_shadow" />
 
@@ -343,8 +343,8 @@
 
                             <ImageView
                                 android:id="@+id/result_poster"
-                                android:layout_width="100dp"
-                                android:layout_height="140dp"
+                                android:layout_width="112dp"
+                                android:layout_height="168dp"
                                 android:layout_gravity="bottom"
                                 android:contentDescription="@string/result_poster_img_des"
                                 android:foreground="@drawable/outline_drawable"
@@ -364,7 +364,7 @@
                                 android:layout_marginBottom="5dp"
                                 android:maxLines="2"
                                 android:textColor="?attr/textColor"
-                                android:textSize="20sp"
+                                android:textSize="26sp"
                                 android:textStyle="bold"
                                 tools:text="The Perfect Run The Perfect Run" />
 

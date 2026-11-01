@@ -12,7 +12,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginEnd="0dp"
-        android:padding="12dp"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="18dp"
+        android:paddingBottom="8dp"
         tools:text="@string/continue_watching"
         app:drawableRightCompat="@drawable/ic_baseline_arrow_forward_24"
         app:drawableTint="?attr/white"
@@ -21,7 +23,7 @@
 
     <androidx.recyclerview.widget.RecyclerView
             android:nextFocusUp="@id/home_child_more_info"
-            android:paddingHorizontal="5dp"
+            android:paddingHorizontal="11dp"
             android:clipToPadding="false"
             android:descendantFocusability="afterDescendants"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
