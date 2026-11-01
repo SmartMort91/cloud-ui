@@ -1,0 +1,51 @@
+diff --git a/app/src/main/res/layout/result_episode.xml b/app/src/main/res/layout/result_episode.xml
+index 19f6688..c7aa37b 100644
+--- a/app/src/main/res/layout/result_episode.xml
++++ b/app/src/main/res/layout/result_episode.xml
+@@ -5,8 +5,8 @@
+     android:id="@+id/episode_holder"
+ 
+     android:layout_width="match_parent"
+-    android:layout_height="50dp"
+-    android:layout_marginBottom="5dp"
++    android:layout_height="58dp"
++    android:layout_marginBottom="6dp"
+ 
+     android:nextFocusRight="@id/download_button"
+     app:cardBackgroundColor="@color/transparent"
+diff --git a/app/src/main/res/layout/result_episode_large.xml b/app/src/main/res/layout/result_episode_large.xml
+index 5e003de..7e8cdb9 100644
+--- a/app/src/main/res/layout/result_episode_large.xml
++++ b/app/src/main/res/layout/result_episode_large.xml
+@@ -7,7 +7,7 @@
+     android:layout_width="wrap_content"
+ 
+     android:layout_height="wrap_content"
+-    android:layout_marginBottom="10dp"
++    android:layout_marginBottom="12dp"
+     android:foreground="@drawable/outline_drawable"
+     android:nextFocusRight="@id/download_button"
+     app:cardBackgroundColor="?attr/boxItemBackground"
+@@ -20,7 +20,7 @@
+         android:layout_height="wrap_content"
+         android:foreground="?android:attr/selectableItemBackgroundBorderless"
+         android:orientation="vertical"
+-        android:padding="10dp">
++        android:padding="12dp">
+ 
+         <LinearLayout
+             android:id="@+id/episode_lin_holder"
+@@ -29,9 +29,10 @@
+             android:orientation="horizontal">
+             <!--app:cardCornerRadius="@dimen/roundedImageRadius"-->
+             <androidx.cardview.widget.CardView
+-                android:layout_width="126dp"
+-                android:layout_height="72dp"
+-                android:foreground="@drawable/outline_drawable">
++                android:layout_width="168dp"
++                android:layout_height="96dp"
++                android:foreground="@drawable/outline_drawable"
++                app:cardCornerRadius="14dp">
+ 
+                 <ImageView
+                     android:id="@+id/episode_poster"
