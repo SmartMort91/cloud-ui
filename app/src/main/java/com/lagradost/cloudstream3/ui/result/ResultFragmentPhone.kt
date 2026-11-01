@@ -709,6 +709,39 @@ open class ResultFragmentPhone : BaseFragment<FragmentResultSwipeBinding>(
                 id = "resultRelated".hashCode(),
                 clickCallback = { callback -> SearchHelper.handleSearchClickCallback(callback) }
             )
+
+            // Let the row take horizontal swipes from the page and its side panels,
+            // while vertical swipes still scroll the page.
+            val slop = android.view.ViewConfiguration.get(context).scaledTouchSlop
+            var startX = 0f
+            var startY = 0f
+            addOnItemTouchListener(object : androidx.recyclerview.widget.RecyclerView.SimpleOnItemTouchListener() {
+                override fun onInterceptTouchEvent(
+                    rv: androidx.recyclerview.widget.RecyclerView,
+                    e: android.view.MotionEvent
+                ): Boolean {
+                    when (e.actionMasked) {
+                        android.view.MotionEvent.ACTION_DOWN -> {
+                            startX = e.x
+                            startY = e.y
+                            rv.parent?.requestDisallowInterceptTouchEvent(true)
+                        }
+                        android.view.MotionEvent.ACTION_MOVE -> {
+                            val dx = kotlin.math.abs(e.x - startX)
+                            val dy = kotlin.math.abs(e.y - startY)
+                            if (dy > slop && dy > dx) {
+                                rv.parent?.requestDisallowInterceptTouchEvent(false)
+                            } else if (dx > slop) {
+                                rv.parent?.requestDisallowInterceptTouchEvent(true)
+                            }
+                        }
+                        android.view.MotionEvent.ACTION_UP,
+                        android.view.MotionEvent.ACTION_CANCEL ->
+                            rv.parent?.requestDisallowInterceptTouchEvent(false)
+                    }
+                    return false
+                }
+            })
         }
 
         recommendationBinding?.apply {

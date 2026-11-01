@@ -1,0 +1,59 @@
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/MainActivity.kt b/app/src/main/java/com/lagradost/cloudstream3/MainActivity.kt
+index 25d35b2..5bae11f 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/MainActivity.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/MainActivity.kt
+@@ -1295,7 +1295,9 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
+                         androidx.core.view.WindowInsetsCompat.Type.systemBars() or
+                             androidx.core.view.WindowInsetsCompat.Type.displayCutout()
+                     )
+-                    v.setPadding(0, 0, 0, 0)
++                    // side padding keeps the selected pill off the rounded ends
++                    val side = (10 * v.resources.displayMetrics.density).toInt()
++                    v.setPadding(side, 0, side, 0)
+                     (v.layoutParams as? ViewGroup.MarginLayoutParams)?.let { lp ->
+                         lp.height = v.resources.getDimensionPixelSize(R.dimen.nav_view_height)
+                         lp.bottomMargin = baseMargin + bars.bottom
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/result/ResultFragmentPhone.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/result/ResultFragmentPhone.kt
+index 3b32075..c5ce013 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/ui/result/ResultFragmentPhone.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/result/ResultFragmentPhone.kt
+@@ -709,6 +709,39 @@ open class ResultFragmentPhone : BaseFragment<FragmentResultSwipeBinding>(
+                 id = "resultRelated".hashCode(),
+                 clickCallback = { callback -> SearchHelper.handleSearchClickCallback(callback) }
+             )
++
++            // Let the row take horizontal swipes from the page and its side panels,
++            // while vertical swipes still scroll the page.
++            val slop = android.view.ViewConfiguration.get(context).scaledTouchSlop
++            var startX = 0f
++            var startY = 0f
++            addOnItemTouchListener(object : androidx.recyclerview.widget.RecyclerView.SimpleOnItemTouchListener() {
++                override fun onInterceptTouchEvent(
++                    rv: androidx.recyclerview.widget.RecyclerView,
++                    e: android.view.MotionEvent
++                ): Boolean {
++                    when (e.actionMasked) {
++                        android.view.MotionEvent.ACTION_DOWN -> {
++                            startX = e.x
++                            startY = e.y
++                            rv.parent?.requestDisallowInterceptTouchEvent(true)
++                        }
++                        android.view.MotionEvent.ACTION_MOVE -> {
++                            val dx = kotlin.math.abs(e.x - startX)
++                            val dy = kotlin.math.abs(e.y - startY)
++                            if (dy > slop && dy > dx) {
++                                rv.parent?.requestDisallowInterceptTouchEvent(false)
++                            } else if (dx > slop) {
++                                rv.parent?.requestDisallowInterceptTouchEvent(true)
++                            }
++                        }
++                        android.view.MotionEvent.ACTION_UP,
++                        android.view.MotionEvent.ACTION_CANCEL ->
++                            rv.parent?.requestDisallowInterceptTouchEvent(false)
++                    }
++                    return false
++                }
++            })
+         }
+ 
+         recommendationBinding?.apply {

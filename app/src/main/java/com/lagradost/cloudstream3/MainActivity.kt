@@ -1295,7 +1295,9 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                         androidx.core.view.WindowInsetsCompat.Type.systemBars() or
                             androidx.core.view.WindowInsetsCompat.Type.displayCutout()
                     )
-                    v.setPadding(0, 0, 0, 0)
+                    // side padding keeps the selected pill off the rounded ends
+                    val side = (10 * v.resources.displayMetrics.density).toInt()
+                    v.setPadding(side, 0, side, 0)
                     (v.layoutParams as? ViewGroup.MarginLayoutParams)?.let { lp ->
                         lp.height = v.resources.getDimensionPixelSize(R.dimen.nav_view_height)
                         lp.bottomMargin = baseMargin + bars.bottom
