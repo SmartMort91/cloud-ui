@@ -168,10 +168,19 @@ object HomeBrowse {
         add(makeTile(context, context.getString(R.string.browse_all_sort), accent = true) {
             show(context, getItems(), getProvider(), Category.ALL)
         })
-        present.forEach { category ->
-            add(makeTile(context, context.getString(category.labelRes)) {
-                show(context, getItems(), getProvider(), category)
-            })
+        add(makeTile(context, context.getString(Sort.RATING.labelRes)) {
+            show(context, getItems(), getProvider(), Category.ALL, Sort.RATING)
+        })
+        add(makeTile(context, context.getString(Sort.NEWEST.labelRes)) {
+            show(context, getItems(), getProvider(), Category.ALL, Sort.NEWEST)
+        })
+        // Some providers mark every title with the same type, a filter for it would do nothing
+        if (present.size > 1) {
+            present.forEach { category ->
+                add(makeTile(context, context.getString(category.labelRes)) {
+                    show(context, getItems(), getProvider(), category)
+                })
+            }
         }
 
         val scroll = HorizontalScrollView(context).apply {
@@ -196,7 +205,8 @@ object HomeBrowse {
         context: Context,
         items: List<SearchResponse>,
         providerName: String?,
-        initial: Category
+        initial: Category,
+        initialSort: Sort = Sort.DEFAULT
     ) {
         val dialog = BottomSheetDialog(context)
         val binding = BrowseSheetBinding.inflate(LayoutInflater.from(context))
@@ -211,7 +221,7 @@ object HomeBrowse {
             providerName?.let { context.getString(R.string.browse_from, it) } ?: ""
 
         var category = initial
-        var sort = Sort.DEFAULT
+        var sort = initialSort
 
         val adapter = SearchAdapter(binding.browseResults) { callback ->
             if (callback.action == SEARCH_ACTION_LOAD) dialog.dismiss()
@@ -252,6 +262,11 @@ object HomeBrowse {
                     refresh()
                 }
             }
+
+        if (binding.browseCategoryGroup.childCount <= 2) {
+            // "All" plus at most one more kind, nothing to choose between
+            (binding.browseCategoryGroup.parent as? View)?.isVisible = false
+        }
 
         Sort.values().forEach { entry ->
             addChip(
