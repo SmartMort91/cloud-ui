@@ -7,6 +7,7 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.view.isVisible
@@ -99,12 +100,13 @@ object HomeBrowse {
         Sort.NAME -> items.sortedBy { it.name.lowercase() }
     }
 
-    private fun tileBackground(context: Context): StateListDrawable {
+    private fun tileBackground(context: Context, accent: Boolean): StateListDrawable {
         val density = context.resources.displayMetrics.density
-        val color = context.colorFromAttribute(R.attr.boxItemBackground)
+        val color = if (accent) context.colorFromAttribute(R.attr.colorPrimary)
+        else context.colorFromAttribute(R.attr.boxItemBackground)
         fun shape(stroke: Boolean) = GradientDrawable().apply {
             setColor(color)
-            cornerRadius = 12 * density
+            cornerRadius = 24 * density
             if (stroke) setStroke((3 * density).toInt(), context.colorFromAttribute(R.attr.colorPrimary))
         }
         return StateListDrawable().apply {
@@ -114,14 +116,20 @@ object HomeBrowse {
         }
     }
 
-    private fun makeTile(context: Context, label: String, onClick: () -> Unit): TextView =
+    private fun makeTile(
+        context: Context,
+        label: String,
+        accent: Boolean = false,
+        onClick: () -> Unit
+    ): TextView =
         TextView(context).apply {
             text = label
             textSize = 15f
             gravity = Gravity.CENTER
-            setTextColor(context.colorFromAttribute(R.attr.textColor))
+            setTextColor(if (accent) 0xFFFFFFFF.toInt() else context.colorFromAttribute(R.attr.textColor))
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            background = tileBackground(context)
+            setPadding(22.toPx, 0, 22.toPx, 0)
+            background = tileBackground(context, accent)
             isFocusable = true
             isClickable = true
             setOnClickListener { onClick() }
@@ -147,38 +155,38 @@ object HomeBrowse {
         holder.removeAllViews()
 
         val context = holder.context
-        holder.setPadding(8.toPx, 8.toPx, 8.toPx, 4.toPx)
+        holder.setPadding(8.toPx, 10.toPx, 8.toPx, 6.toPx)
 
-        present.chunked(3).forEach { rowCategories ->
-            val row = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
-            rowCategories.forEach { category ->
-                val tile = makeTile(context, context.getString(category.labelRes)) {
-                    show(context, getItems(), getProvider(), category)
-                }
-                row.addView(tile, LinearLayout.LayoutParams(0, 64.toPx, 1f).apply {
-                    setMargins(4.toPx, 4.toPx, 4.toPx, 4.toPx)
-                })
-            }
-            // Keep the tile width the same on a row that is not full
-            repeat(3 - rowCategories.size) {
-                row.addView(View(context), LinearLayout.LayoutParams(0, 1, 1f))
-            }
-            holder.addView(
-                row,
-                LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
-            )
+        val row = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
+        fun add(tile: View) {
+            row.addView(tile, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                46.toPx
+            ).apply { setMargins(4.toPx, 2.toPx, 4.toPx, 2.toPx) })
         }
 
-        val allTile = makeTile(context, context.getString(R.string.browse_all_sort)) {
+        add(makeTile(context, context.getString(R.string.browse_all_sort), accent = true) {
             show(context, getItems(), getProvider(), Category.ALL)
+        })
+        present.forEach { category ->
+            add(makeTile(context, context.getString(category.labelRes)) {
+                show(context, getItems(), getProvider(), category)
+            })
         }
-        holder.addView(allTile, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            52.toPx
-        ).apply { setMargins(4.toPx, 4.toPx, 4.toPx, 4.toPx) })
+
+        val scroll = HorizontalScrollView(context).apply {
+            isHorizontalScrollBarEnabled = false
+            overScrollMode = View.OVER_SCROLL_NEVER
+            clipToPadding = false
+            addView(row)
+        }
+        holder.addView(
+            scroll,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
 
         holder.isVisible = true
     }
