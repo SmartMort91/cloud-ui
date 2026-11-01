@@ -1,0 +1,88 @@
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/settings/SettingsUIScreen.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/settings/SettingsUIScreen.kt
+index 86ae02d..2fea03f 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/ui/settings/SettingsUIScreen.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/settings/SettingsUIScreen.kt
+@@ -29,6 +29,10 @@ import com.lagradost.cloudstream3.R
+ import com.lagradost.cloudstream3.SearchQuality
+ import com.lagradost.cloudstream3.mvvm.safe
+ import com.lagradost.cloudstream3.ui.UiPrefs
++import com.lagradost.cloudstream3.ui.subtitles.SUBTITLE_AUTO_SELECT_KEY
++import com.lagradost.cloudstream3.ui.subtitles.SubtitlesFragment
++import com.lagradost.cloudstream3.CloudStreamApp.Companion.setKey
++import com.lagradost.cloudstream3.utils.SubtitleHelper
+ import com.lagradost.cloudstream3.ui.clear
+ import com.lagradost.cloudstream3.ui.home.HomeChildItemAdapter
+ import com.lagradost.cloudstream3.ui.home.ParentItemAdapter
+@@ -135,6 +139,15 @@ object SettingsUIScreen : SearchableSettings {
+         val focusTitle = stringResource(R.string.ui_focus_style_settings)
+         val switcherTitle = stringResource(R.string.ui_provider_switcher_settings)
+ 
++        val subLangTitle = stringResource(R.string.subs_auto_select_language)
++        val noneLabel = stringResource(R.string.none)
++        val subLangs = listOf(Pair(noneLabel, noneLabel)) +
++                SubtitleHelper.languages
++                    .map { Pair(it.IETF_tag, it.nameNextToFlagEmoji()) }
++                    .sortedBy { it.second.substringAfter("\u00a0").lowercase() }
++        val subLangTags = subLangs.map { it.first }
++        val subLangNames = subLangs.map { it.second }
++
+         val navKey = stringResource(R.string.nav_labels_key)
+         val startKey = stringResource(R.string.start_tab_key)
+         val navTitle = stringResource(R.string.nav_labels_settings)
+@@ -231,6 +244,24 @@ object SettingsUIScreen : SearchableSettings {
+                         ) { UiPrefs.putOpt(UiPrefs.PROVIDER_SWITCHER, it) }
+                     }
+                 ),
++                Preference.PreferenceItem.TextPreference(
++                    title = subLangTitle,
++                    subtitle = subLangNames.getOrNull(
++                        subLangTags.indexOf(SubtitlesFragment.getAutoSelectLanguageTagIETF())
++                    ) ?: noneLabel,
++                    onClick = {
++                        activity?.showBottomDialog(
++                            subLangNames,
++                            subLangTags.indexOf(SubtitlesFragment.getAutoSelectLanguageTagIETF()),
++                            subLangTitle,
++                            true,
++                            {}
++                        ) { index ->
++                            setKey(SUBTITLE_AUTO_SELECT_KEY, subLangTags[index])
++                            tick++
++                        }
++                    }
++                ),
+                 Preference.PreferenceItem.TextPreference(
+                     title = navTitle,
+                     subtitle = label(navNames, navValues, sharedString(navKey, "selected")),
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/utils/AppContextUtils.kt b/app/src/main/java/com/lagradost/cloudstream3/utils/AppContextUtils.kt
+index 2e38291..f0ee9c3 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/utils/AppContextUtils.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/utils/AppContextUtils.kt
+@@ -74,6 +74,7 @@ import com.lagradost.cloudstream3.syncproviders.AccountManager.Companion.APP_STR
+ import com.lagradost.cloudstream3.syncproviders.providers.Kitsu
+ import com.lagradost.cloudstream3.ui.WebviewFragment
+ import com.lagradost.cloudstream3.ui.player.SubtitleData
++import com.lagradost.cloudstream3.ui.subtitles.SubtitlesFragment
+ import com.lagradost.cloudstream3.ui.result.ResultFragment
+ import com.lagradost.cloudstream3.ui.settings.Globals
+ import com.lagradost.cloudstream3.ui.settings.extensions.PluginsFragment
+@@ -365,11 +366,18 @@ object AppContextUtils {
+ 
+     /** Sort subtitles by names */
+     fun sortSubs(subs: Set<SubtitleData>): List<SubtitleData> {
++        // The preferred language (the auto-select language setting) goes first, work it out once
++        // per subtitle as matching a language is slow compared to comparing names.
++        val preferred = SubtitlesFragment.getAutoSelectLanguageTagIETF()
++        val rank = HashMap<SubtitleData, Int>()
++        subs.forEach { rank[it] = if (it.matchesLanguageCode(preferred)) 0 else 1 }
++
+         // Be aware, sorting by "$originalName $nameSuffix" causes "a (b) 1" < "a 1",
+         // where "originalName then nameSuffix" preserves "a 1" < "a (b) 1", because we do not compare '(' and '1'.
+         return subs
+             .sortedWith(
+-                compareBy { subtitle: SubtitleData -> subtitle.originalName }
++                compareBy<SubtitleData> { subtitle -> rank[subtitle] ?: 1 }
++                    .thenBy { subtitle: SubtitleData -> subtitle.originalName }
+                     .thenBy { subtitle: SubtitleData -> subtitle.nameSuffix })
+     }
+ 

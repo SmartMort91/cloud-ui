@@ -29,6 +29,10 @@ import com.lagradost.cloudstream3.R
 import com.lagradost.cloudstream3.SearchQuality
 import com.lagradost.cloudstream3.mvvm.safe
 import com.lagradost.cloudstream3.ui.UiPrefs
+import com.lagradost.cloudstream3.ui.subtitles.SUBTITLE_AUTO_SELECT_KEY
+import com.lagradost.cloudstream3.ui.subtitles.SubtitlesFragment
+import com.lagradost.cloudstream3.CloudStreamApp.Companion.setKey
+import com.lagradost.cloudstream3.utils.SubtitleHelper
 import com.lagradost.cloudstream3.ui.clear
 import com.lagradost.cloudstream3.ui.home.HomeChildItemAdapter
 import com.lagradost.cloudstream3.ui.home.ParentItemAdapter
@@ -135,6 +139,15 @@ object SettingsUIScreen : SearchableSettings {
         val focusTitle = stringResource(R.string.ui_focus_style_settings)
         val switcherTitle = stringResource(R.string.ui_provider_switcher_settings)
 
+        val subLangTitle = stringResource(R.string.subs_auto_select_language)
+        val noneLabel = stringResource(R.string.none)
+        val subLangs = listOf(Pair(noneLabel, noneLabel)) +
+                SubtitleHelper.languages
+                    .map { Pair(it.IETF_tag, it.nameNextToFlagEmoji()) }
+                    .sortedBy { it.second.substringAfter("\u00a0").lowercase() }
+        val subLangTags = subLangs.map { it.first }
+        val subLangNames = subLangs.map { it.second }
+
         val navKey = stringResource(R.string.nav_labels_key)
         val startKey = stringResource(R.string.start_tab_key)
         val navTitle = stringResource(R.string.nav_labels_settings)
@@ -229,6 +242,24 @@ object SettingsUIScreen : SearchableSettings {
                             switcherTitle, onOffNames, onOffValues,
                             UiPrefs.getOpt(UiPrefs.PROVIDER_SWITCHER, "on")
                         ) { UiPrefs.putOpt(UiPrefs.PROVIDER_SWITCHER, it) }
+                    }
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = subLangTitle,
+                    subtitle = subLangNames.getOrNull(
+                        subLangTags.indexOf(SubtitlesFragment.getAutoSelectLanguageTagIETF())
+                    ) ?: noneLabel,
+                    onClick = {
+                        activity?.showBottomDialog(
+                            subLangNames,
+                            subLangTags.indexOf(SubtitlesFragment.getAutoSelectLanguageTagIETF()),
+                            subLangTitle,
+                            true,
+                            {}
+                        ) { index ->
+                            setKey(SUBTITLE_AUTO_SELECT_KEY, subLangTags[index])
+                            tick++
+                        }
                     }
                 ),
                 Preference.PreferenceItem.TextPreference(

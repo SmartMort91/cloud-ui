@@ -74,6 +74,7 @@ import com.lagradost.cloudstream3.syncproviders.AccountManager.Companion.APP_STR
 import com.lagradost.cloudstream3.syncproviders.providers.Kitsu
 import com.lagradost.cloudstream3.ui.WebviewFragment
 import com.lagradost.cloudstream3.ui.player.SubtitleData
+import com.lagradost.cloudstream3.ui.subtitles.SubtitlesFragment
 import com.lagradost.cloudstream3.ui.result.ResultFragment
 import com.lagradost.cloudstream3.ui.settings.Globals
 import com.lagradost.cloudstream3.ui.settings.extensions.PluginsFragment
@@ -365,11 +366,18 @@ object AppContextUtils {
 
     /** Sort subtitles by names */
     fun sortSubs(subs: Set<SubtitleData>): List<SubtitleData> {
+        // The preferred language (the auto-select language setting) goes first, work it out once
+        // per subtitle as matching a language is slow compared to comparing names.
+        val preferred = SubtitlesFragment.getAutoSelectLanguageTagIETF()
+        val rank = HashMap<SubtitleData, Int>()
+        subs.forEach { rank[it] = if (it.matchesLanguageCode(preferred)) 0 else 1 }
+
         // Be aware, sorting by "$originalName $nameSuffix" causes "a (b) 1" < "a 1",
         // where "originalName then nameSuffix" preserves "a 1" < "a (b) 1", because we do not compare '(' and '1'.
         return subs
             .sortedWith(
-                compareBy { subtitle: SubtitleData -> subtitle.originalName }
+                compareBy<SubtitleData> { subtitle -> rank[subtitle] ?: 1 }
+                    .thenBy { subtitle: SubtitleData -> subtitle.originalName }
                     .thenBy { subtitle: SubtitleData -> subtitle.nameSuffix })
     }
 
