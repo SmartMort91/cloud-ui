@@ -2,8 +2,8 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:background="?attr/primaryGrayBackground"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="?attr/primaryBlackBackground">
 
     <ImageView
         android:id="@+id/home_scroll_preview"
@@ -12,70 +12,66 @@
         android:scaleType="centerCrop"
         tools:src="@drawable/example_poster" />
 
+    <!-- Darkens the left side so the text is readable, like a streaming-service hero -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/hero_scrim_start" />
+
     <View
         android:id="@+id/title_shadow_top"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
+        android:layout_height="140dp"
         android:layout_gravity="top"
-        android:alpha="1"
+        android:alpha="0.85"
         android:background="@drawable/background_shadow"
-        android:rotation="180"
-        android:visibility="visible" />
+        android:rotation="180" />
 
     <View
         android:id="@+id/title_shadow"
         android:layout_width="match_parent"
-        android:layout_height="420dp"
+        android:layout_height="320dp"
         android:layout_gravity="bottom"
         android:background="@drawable/background_shadow" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal|bottom"
-        android:layout_marginBottom="120dp"
-        android:orientation="vertical">
+        android:layout_gravity="start|bottom"
+        android:layout_marginBottom="112dp"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp">
 
         <ImageView
             android:id="@+id/home_preview_logo"
-            android:layout_width="300dp"
-            android:layout_height="96dp"
-            android:layout_gravity="center_horizontal|bottom"
-            android:scaleType="fitCenter"
+            android:layout_width="280dp"
+            android:layout_height="88dp"
+            android:layout_gravity="start"
+            android:contentDescription="@null"
             android:paddingBottom="10dp"
-            android:contentDescription="@null" />
+            android:scaleType="fitStart" />
 
         <TextView
             android:id="@+id/home_scroll_preview_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:gravity="center"
-            android:paddingHorizontal="30dp"
-            android:paddingBottom="10dp"
+            android:layout_gravity="start"
+            android:gravity="start"
+            android:maxLines="2"
+            android:paddingBottom="8dp"
             android:textColor="?attr/white"
-            android:textSize="24sp"
+            android:textSize="30sp"
             android:textStyle="bold"
             tools:text="The Perfect Run" />
-        <!--<TextView
-            android:paddingStart="30dp"
-            android:paddingEnd="30dp"
-            android:id="@+id/home_season_tags"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textColor="@color/white"
-            android:textSize="14sp"
-            tools:text="5 seasons 50 episodes" />-->
+
         <TextView
             android:id="@+id/home_scroll_preview_tags"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:gravity="center"
-            android:paddingStart="30dp"
-            android:paddingEnd="30dp"
-            android:textColor="?attr/white"
+            android:layout_gravity="start"
+            android:gravity="start"
+            android:textColor="#CCFFFFFF"
             android:textSize="14sp"
             tools:text="Hello • World • Tags" />
     </LinearLayout>

@@ -409,8 +409,8 @@
     <string name="ui_search_provider_settings">Single-provider search</string>
     <string name="ui_search_provider_off">Off (search all selected providers)</string>
     <string name="ui_home_style_settings">Home style</string>
-    <string name="ui_home_style_classic">Classic</string>
-    <string name="ui_home_style_cinematic">Cinematic (rounded hero, tile filters)</string>
+    <string name="ui_home_style_classic">Streaming (full-width hero)</string>
+    <string name="ui_home_style_cinematic">Floating (rounded hero card)</string>
     <string name="ui_focus_style_settings">Card focus style (TV and emulator)</string>
     <string name="ui_focus_lift">Lift and outline</string>
     <string name="ui_focus_border">Outline only</string>

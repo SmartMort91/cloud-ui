@@ -18,7 +18,7 @@ object UiPrefs {
     const val SEARCH_PROVIDER = "search_provider"
     const val HOME_STYLE = "home_style"
     // The streaming-style home is the default
-    const val HOME_DEFAULT = "cinematic"
+    const val HOME_DEFAULT = "classic"
     const val FOCUS_STYLE = "focus_style"
     const val HOME_TILES = "home_tiles"
     const val PROVIDER_SWITCHER = "provider_switcher"
