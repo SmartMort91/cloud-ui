@@ -939,6 +939,15 @@ open class ResultFragmentPhone : BaseFragment<FragmentResultSwipeBinding>(
                     resultNoEpisodes.setText(d.noEpisodesFoundText)
                     resultTitle.setText(d.titleText)
                     resultMetaSite.setText(d.apiName)
+                    // Dropdown to jump to the same title on another provider
+                    getStoredData()?.let { stored ->
+                        ProviderSwitcher.bind(
+                            this@ResultFragmentPhone,
+                            resultMetaSite,
+                            d.title,
+                            stored.apiName
+                        ) { context?.openBrowser(stored.url) }
+                    }
                     resultMetaType.setText(d.typeText)
                     resultMetaYear.setText(d.yearText)
                     resultMetaDuration.setText(d.durationText)

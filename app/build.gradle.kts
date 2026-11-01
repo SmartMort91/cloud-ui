@@ -139,6 +139,21 @@ android {
             "ANILIST_KEY",
             "\"" + (System.getenv("ANILIST_KEY") ?: localProperties["anilist.key"]) + "\""
         )
+
+        // The in-app updater checks the GitHub repo the app was built in, so a fork keeps
+        // updating itself instead of switching to the official app. Falls back to upstream.
+        val updateRepo = (System.getenv("GITHUB_REPOSITORY") ?: "recloudstream/cloudstream")
+            .split("/")
+        buildConfigField(
+            "String",
+            "UPDATE_REPO_OWNER",
+            "\"" + updateRepo.getOrElse(0) { "recloudstream" } + "\""
+        )
+        buildConfigField(
+            "String",
+            "UPDATE_REPO_NAME",
+            "\"" + updateRepo.getOrElse(1) { "cloudstream" } + "\""
+        )
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

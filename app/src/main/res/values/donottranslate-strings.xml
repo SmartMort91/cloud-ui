@@ -67,6 +67,11 @@
     <string name="bottom_title_key">bottom_title_key</string>
     <string name="nav_labels_key">nav_labels_key</string>
     <string name="start_tab_key">start_tab_key</string>
+    <string name="ui_search_provider_key">ui_search_provider_key</string>
+    <string name="ui_home_style_key">ui_home_style_key</string>
+    <string name="ui_home_tiles_key">ui_home_tiles_key</string>
+    <string name="ui_focus_style_key">ui_focus_style_key</string>
+    <string name="ui_provider_switcher_key">ui_provider_switcher_key</string>
     <string name="poster_ui_key">poster_ui_key</string>
     <string name="overscan_key">overscan_key</string>
     <string name="poster_size_key">poster_size_key</string>

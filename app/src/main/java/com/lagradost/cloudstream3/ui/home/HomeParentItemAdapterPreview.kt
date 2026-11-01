@@ -4,8 +4,11 @@ import android.content.Context
 import android.os.Bundle
 import android.os.Parcelable
 import android.view.LayoutInflater
+import android.graphics.Outline
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewOutlineProvider
+import android.widget.LinearLayout
 import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
@@ -33,6 +36,7 @@ import com.lagradost.cloudstream3.mvvm.Resource
 import com.lagradost.cloudstream3.mvvm.debugException
 import com.lagradost.cloudstream3.mvvm.logError
 import com.lagradost.cloudstream3.mvvm.observe
+import com.lagradost.cloudstream3.ui.UiPrefs
 import com.lagradost.cloudstream3.ui.ViewHolderState
 import com.lagradost.cloudstream3.ui.WatchType
 import com.lagradost.cloudstream3.ui.account.AccountHelper.showAccountEditDialog
@@ -339,6 +343,71 @@ class HomeParentItemAdapterPreview(
             itemView.findViewById(R.id.alternative_account_padding)
 
         private val homeNonePadding: View = itemView.findViewById(R.id.home_none_padding)
+
+        private val browseHolder: LinearLayout? = itemView.findViewById(R.id.home_browse_holder)
+
+        /** Category tiles and the browse sheet, built from the titles on the home page */
+        private fun updateBrowseTiles(
+            page: Resource<Map<String, HomeViewModel.ExpandableHomepageList>>
+        ) {
+            val holder = browseHolder ?: return
+            val items = (page as? Resource.Success)?.value?.let { HomeBrowse.collect(it) }
+                ?: emptyList()
+            if (items.isEmpty() || !UiPrefs.areBrowseTilesEnabled) {
+                holder.isVisible = false
+                return
+            }
+            HomeBrowse.bindTiles(
+                holder,
+                items,
+                getItems = {
+                    (viewModel.page.value as? Resource.Success)?.value?.let { HomeBrowse.collect(it) }
+                        ?: emptyList()
+                },
+                getProvider = { viewModel.apiName.value }
+            )
+        }
+
+        init {
+            if (UiPrefs.isCinematicHome && !isLayout(TV or EMULATOR)) applyCinematicHome()
+        }
+
+        /**
+         * Profile option "Cinematic": an inset hero banner with rounded corners and
+         * bigger, tile-like category filters.
+         */
+        private fun applyCinematicHome() {
+            val density = itemView.resources.displayMetrics.density
+            val margin = (12 * density).toInt()
+
+            previewViewpagerText.apply {
+                (layoutParams as? ViewGroup.MarginLayoutParams)?.let { lp ->
+                    lp.marginStart = margin
+                    lp.marginEnd = margin
+                    lp.topMargin = margin / 2
+                    lp.bottomMargin = margin / 2
+                    lp.height = (420 * density).toInt()
+                    layoutParams = lp
+                }
+                clipToOutline = true
+                outlineProvider = object : ViewOutlineProvider() {
+                    override fun getOutline(view: View, outline: Outline) {
+                        outline.setRoundRect(0, 0, view.width, view.height, 18 * density)
+                    }
+                }
+            }
+
+            val group = itemView.findViewById<ViewGroup>(R.id.home_select_group) ?: return
+            for (i in 0 until group.childCount) {
+                (group.getChildAt(i) as? Chip)?.apply {
+                    chipMinHeight = 44 * density
+                    chipCornerRadius = 12 * density
+                    chipStartPadding = 14 * density
+                    chipEndPadding = 14 * density
+                    textSize = 15f
+                }
+            }
+        }
 
         fun onSelect(item: LoadResponse, position: Int) {
             (binding as? FragmentHomeHeadTvBinding)?.apply {
@@ -797,6 +866,9 @@ class HomeParentItemAdapterPreview(
                         binding.homePreviewReloadProvider.isGone = (name == noneApi.name)
                     }
                 }*/
+                observe(viewModel.page) {
+                    updateBrowseTiles(it)
+                }
                 observe(viewModel.resumeWatching) {
                     updateResume(it)
                 }

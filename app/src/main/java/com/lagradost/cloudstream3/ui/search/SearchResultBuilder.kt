@@ -19,6 +19,8 @@ import com.lagradost.cloudstream3.SearchQuality
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.isMovieType
 import com.lagradost.cloudstream3.syncproviders.SyncAPI
+import com.lagradost.cloudstream3.ui.UiPrefs
+import com.lagradost.cloudstream3.ui.settings.Globals.EMULATOR
 import com.lagradost.cloudstream3.ui.settings.Globals.TV
 import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
 import com.lagradost.cloudstream3.utils.AppContextUtils.getNameFull
@@ -50,7 +52,8 @@ object SearchResultBuilder {
         itemView: View,
         nextFocusUp: Int? = null,
         nextFocusDown: Int? = null,
-        colorCallback: ((Palette) -> Unit)? = null
+        colorCallback: ((Palette) -> Unit)? = null,
+        forceTitle: Boolean = false
     ) {
         val cardView: ImageView = itemView.findViewById(R.id.imageView)
         val cardText: TextView? = itemView.findViewById(R.id.imageText)
@@ -102,7 +105,7 @@ object SearchResultBuilder {
             }
         }
 
-        shadow?.isVisible = showTitle
+        shadow?.isVisible = showTitle || forceTitle
 
         when (card.quality) {
             SearchQuality.BlueRay -> R.string.quality_blueray
@@ -130,7 +133,7 @@ object SearchResultBuilder {
         }
 
         cardText?.text = card.name
-        cardText?.isVisible = showTitle
+        cardText?.isVisible = showTitle || forceTitle
         cardView.isVisible = true
         if (!card.posterUrl.isNullOrEmpty()) {
             cardView.loadImage(card.posterUrl, card.posterHeaders) {
@@ -238,6 +241,7 @@ object SearchResultBuilder {
         }*/
 
         itemView.setOnFocusChangeListener { view, b ->
+            if (isLayout(TV or EMULATOR)) UiPrefs.applyCardFocus(view, b)
             focus(view, b)
         }
 

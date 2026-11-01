@@ -868,6 +868,15 @@ class ResultFragmentTv : BaseFragment<FragmentResultTvBinding>(
                         resultNoEpisodes.setText(d.noEpisodesFoundText)
                         resultTitle.setText(d.titleText)
                         resultMetaSite.setText(d.apiName)
+                        // Dropdown to jump to the same title on another provider
+                        getStoredData()?.let { stored ->
+                            ProviderSwitcher.bind(
+                                this@ResultFragmentTv,
+                                resultMetaSite,
+                                d.title,
+                                stored.apiName
+                            ) { }
+                        }
                         resultMetaType.setText(d.typeText)
                         resultMetaYear.setText(d.yearText)
                         resultMetaDuration.setText(d.durationText)

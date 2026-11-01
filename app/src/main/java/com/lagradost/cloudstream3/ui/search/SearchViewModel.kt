@@ -76,10 +76,12 @@ class SearchViewModel : ViewModel() {
         providersActive: Set<String> = setOf(),
         ignoreSettings: Boolean = false,
         isQuickSearch: Boolean = false,
+        saveToHistory: Boolean = true,
     ) {
         currentSearchIndex++
         onGoingSearch?.cancel()
-        onGoingSearch = search(query, providersActive, ignoreSettings, isQuickSearch)
+        onGoingSearch =
+            search(query, providersActive, ignoreSettings, isQuickSearch, saveToHistory)
     }
 
     fun updateHistory() = ioSafe {
@@ -200,6 +202,7 @@ class SearchViewModel : ViewModel() {
         providersActive: Set<String>,
         ignoreSettings: Boolean = false,
         isQuickSearch: Boolean = false,
+        saveToHistory: Boolean = true,
     ) =
         viewModelScope.launchSafe {
             val currentIndex = currentSearchIndex
@@ -208,7 +211,7 @@ class SearchViewModel : ViewModel() {
                 return@launchSafe
             }
 
-            if (!isQuickSearch) {
+            if (!isQuickSearch && saveToHistory) {
                 val key = query.hashCode().toString()
                 setKey(
                     "$currentAccount/$SEARCH_HISTORY_KEY",

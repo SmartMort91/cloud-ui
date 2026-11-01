@@ -5,18 +5,28 @@ import android.content.Intent
 import android.content.DialogInterface
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.StateListDrawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.AbsListView
 import android.widget.ArrayAdapter
+import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import androidx.preference.PreferenceManager
@@ -57,6 +67,7 @@ import com.lagradost.cloudstream3.ui.home.HomeViewModel
 import com.lagradost.cloudstream3.ui.home.ParentItemAdapter
 import com.lagradost.cloudstream3.ui.result.FOCUS_SELF
 import com.lagradost.cloudstream3.ui.result.setLinearListLayout
+import com.lagradost.cloudstream3.ui.UiPrefs
 import com.lagradost.cloudstream3.ui.setRecycledViewPool
 import com.lagradost.cloudstream3.ui.settings.Globals.EMULATOR
 import com.lagradost.cloudstream3.ui.settings.Globals.PHONE
@@ -74,13 +85,16 @@ import com.lagradost.cloudstream3.utils.Coroutines.ioSafe
 import com.lagradost.cloudstream3.utils.Coroutines.main
 import com.lagradost.cloudstream3.utils.DataStoreHelper
 import com.lagradost.cloudstream3.utils.DataStoreHelper.currentAccount
+import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showBottomDialog
 import com.lagradost.cloudstream3.utils.SubtitleHelper
 import com.lagradost.cloudstream3.utils.BackPressedCallbackHelper.attachBackPressedCallback
 import com.lagradost.cloudstream3.utils.BackPressedCallbackHelper.detachBackPressedCallback
+import com.lagradost.cloudstream3.utils.UIHelper.colorFromAttribute
 import com.lagradost.cloudstream3.utils.UIHelper.dismissSafe
 import com.lagradost.cloudstream3.utils.UIHelper.fixSystemBarsPadding
 import com.lagradost.cloudstream3.utils.UIHelper.getSpanCount
 import com.lagradost.cloudstream3.utils.UIHelper.hideKeyboard
+import com.lagradost.cloudstream3.utils.UIHelper.toPx
 import java.util.Locale
 import java.util.concurrent.locks.ReentrantLock
 
@@ -113,6 +127,14 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
     private val searchViewModel: SearchViewModel by activityViewModels()
     private var bottomSheetDialog: BottomSheetDialog? = null
 
+    /** Name of the one provider to search in (banner search layout), null if the mode is off */
+    private val bannerProvider: String? get() = UiPrefs.searchProvider
+
+    /** True when the on-screen keyboard (TV and emulator, banner search) is in use */
+    private var keyboardMode = false
+    private val liveHandler = Handler(Looper.getMainLooper())
+    private var liveRunnable: Runnable? = null
+
     private val speechRecognizerLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -141,6 +163,8 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
     }
 
     override fun onDestroyView() {
+        liveRunnable?.let { liveHandler.removeCallbacks(it) }
+        keyboardMode = false
         hideKeyboard()
         bottomSheetDialog?.ownHide()
         activity?.detachBackPressedCallback("SearchFragment")
@@ -166,11 +190,21 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
      * If that results in no available providers then only filter
      * providers by preferred media
      **/
-    fun search(query: String?) {
+    fun search(query: String?, saveToHistory: Boolean = true) {
         if (query == null) return
         searchViewModel.clearSuggestions()
         // don't resume state from prev search
         (binding?.searchMasterRecycler?.adapter as? BaseAdapter<*, *>)?.clearState()
+
+        // Single-provider mode: only that provider is searched, results are shown as banners
+        bannerProvider?.let { provider ->
+            searchViewModel.searchAndCancel(
+                query = query,
+                providersActive = setOf(provider),
+                saveToHistory = saveToHistory
+            )
+            return
+        }
         context?.let { ctx ->
             val default = enumValues<TvType>().sorted().filter { it != TvType.NSFW }
                 .map { it.ordinal.toString() }.toSet()
@@ -219,6 +253,167 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
         }
     }
 
+    private fun scheduleLiveSearch(text: String) {
+        liveRunnable?.let { liveHandler.removeCallbacks(it) }
+        if (text.length < 2) return
+        val runnable = Runnable { search(text, saveToHistory = false) }
+        liveRunnable = runnable
+        liveHandler.postDelayed(runnable, 450)
+    }
+
+    /** Pick the single provider used by the banner search, or turn the mode off */
+    private fun pickBannerProvider(binding: FragmentSearchBinding) {
+        val ctx = context ?: return
+        val previous = UiPrefs.searchProvider
+        val providers = ctx.filterProviderByPreferredMedia(hasHomePageIsRequired = false)
+            .map { it.name }.distinct().sortedBy { it.lowercase() }
+        val names = listOf(getString(R.string.ui_search_provider_off)) + providers
+        val values = listOf("") + providers
+        activity?.showBottomDialog(
+            names,
+            values.indexOf(previous ?: "").coerceAtLeast(0),
+            getString(R.string.ui_search_provider_settings),
+            true,
+            {}
+        ) { index ->
+            val picked = values[index].ifBlank { null }
+            UiPrefs.searchProvider = picked
+            if ((picked == null) != (previous == null)) {
+                // Layout changes between banners and the normal search, so rebuild the screen
+                activity?.recreate()
+            } else if (picked != previous) {
+                search(binding.mainSearch.query.toString())
+            }
+        }
+    }
+
+    /**
+     * Builds an on-screen keyboard on the left and puts the results on the right.
+     * Done in code so the layout files (and their shared view binding) stay untouched.
+     */
+    private fun setupTvKeyboard(binding: FragmentSearchBinding) {
+        val ctx = binding.root.context
+        val results = binding.searchAutofitResults
+        val history = binding.searchHistoryRecycler
+        val parent = results.parent as? ViewGroup ?: return
+        if (history.parent != parent) return
+        keyboardMode = true
+
+        val startMargin = (results.layoutParams as? ViewGroup.MarginLayoutParams)?.marginStart ?: 0
+        val index = parent.indexOfChild(results)
+        parent.removeView(results)
+        parent.removeView(history)
+
+        val matchParent = ViewGroup.LayoutParams.MATCH_PARENT
+
+        // Results replace the history list as soon as something is typed
+        val rightPane = FrameLayout(ctx).apply {
+            layoutParams = LinearLayout.LayoutParams(0, matchParent, 1f)
+        }
+        rightPane.addView(history, FrameLayout.LayoutParams(matchParent, matchParent))
+        rightPane.addView(results, FrameLayout.LayoutParams(matchParent, matchParent))
+
+        val keyboard = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(320.toPx, matchParent)
+            setPadding(12.toPx, 12.toPx, 12.toPx, 12.toPx)
+            setBackgroundColor(ctx.colorFromAttribute(R.attr.primaryBlackBackground))
+        }
+
+        val keyColor = ctx.colorFromAttribute(R.attr.boxItemBackground)
+        val keyText = ctx.colorFromAttribute(R.attr.textColor)
+        val activeColor = ctx.colorFromAttribute(R.attr.colorPrimary)
+        // Readable text on whatever accent color is selected
+        val activeText =
+            if (ColorUtils.calculateLuminance(activeColor) > 0.5) Color.BLACK else Color.WHITE
+
+        fun keyBackground(color: Int) = GradientDrawable().apply {
+            setColor(color)
+            cornerRadius = 8.toPx.toFloat()
+        }
+
+        fun makeKey(label: String, textSizeSp: Float, onClick: () -> Unit): TextView =
+            TextView(ctx).apply {
+                text = label
+                textSize = textSizeSp
+                gravity = Gravity.CENTER
+                isFocusable = true
+                isClickable = true
+                id = View.generateViewId()
+                background = StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_focused), keyBackground(activeColor))
+                    addState(intArrayOf(android.R.attr.state_pressed), keyBackground(activeColor))
+                    addState(intArrayOf(), keyBackground(keyColor))
+                }
+                setTextColor(
+                    ColorStateList(
+                        arrayOf(
+                            intArrayOf(android.R.attr.state_focused),
+                            intArrayOf(android.R.attr.state_pressed),
+                            intArrayOf()
+                        ),
+                        intArrayOf(activeText, activeText, keyText)
+                    )
+                )
+                layoutParams = LinearLayout.LayoutParams(0, 44.toPx, 1f).apply {
+                    setMargins(3.toPx, 3.toPx, 3.toPx, 3.toPx)
+                }
+                setOnClickListener { onClick() }
+            }
+
+        fun addRow(vararg keys: TextView) {
+            keyboard.addView(LinearLayout(ctx).apply {
+                orientation = LinearLayout.HORIZONTAL
+                keys.forEach { addView(it) }
+            })
+        }
+
+        fun currentQuery() = binding.mainSearch.query.toString()
+
+        addRow(
+            makeKey("Space", 14f) { binding.mainSearch.setQuery(currentQuery() + " ", false) },
+            makeKey("Delete", 14f) { binding.mainSearch.setQuery(currentQuery().dropLast(1), false) },
+            makeKey("Search", 14f) { binding.mainSearch.setQuery(currentQuery(), true) },
+        )
+
+        var sideKey: TextView? = null
+        var firstKey: TextView? = null
+        for (rowChars in listOf("abcdef", "ghijkl", "mnopqr", "stuvwx", "yz1234", "567890")) {
+            val keys = rowChars.map { ch ->
+                makeKey(ch.toString(), 18f) {
+                    binding.mainSearch.setQuery(currentQuery() + ch, false)
+                }.also {
+                    if (ch == 'a') firstKey = it
+                    if (ch == 'l') sideKey = it
+                }
+            }
+            addRow(*keys.toTypedArray())
+        }
+
+        // Moving left from the banners goes to the keyboard instead of the navigation rail
+        sideKey?.let {
+            results.nextFocusLeftId = it.id
+            history.nextFocusLeftId = it.id
+        }
+
+        val body = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(matchParent, matchParent).apply {
+                marginStart = startMargin
+            }
+            addView(keyboard)
+            addView(rightPane)
+        }
+        parent.addView(body, index)
+
+        // No system keyboard popping up on top of ours
+        activity?.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
+        binding.searchRoot.findViewById<TextView>(androidx.appcompat.R.id.search_src_text)
+            ?.setShowSoftInputOnFocus(false)
+
+        body.post { firstKey?.requestFocus() }
+    }
+
     override fun fixLayout(view: View) {
         fixSystemBarsPadding(
             view,
@@ -228,7 +423,8 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
 
         // Fix grid
         currentSpan = view.context.getSpanCount()
-        binding?.searchAutofitResults?.spanCount = currentSpan
+        binding?.searchAutofitResults?.spanCount =
+            if (bannerProvider != null) view.context.getSpanCount(isHorizontal = true) else currentSpan
         HomeFragment.configEvent.invoke()
     }
 
@@ -238,9 +434,12 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
     ) {
         reloadRepos()
         binding.apply {
+            val isBanner = bannerProvider != null
             val adapter =
                 SearchAdapter(
                     searchAutofitResults,
+                    isHorizontal = isBanner,
+                    forceTitle = isBanner,
                 ) { callback ->
                     SearchHelper.handleSearchClickCallback(callback)
                 }
@@ -250,6 +449,12 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
             searchAutofitResults.setRecycledViewPool(SearchAdapter.sharedPool)
             searchAutofitResults.adapter = adapter
             searchLoadingBar.alpha = 0f
+        }
+
+        if (bannerProvider != null) {
+            // Provider filter chips make no sense when only one provider is searched
+            binding.tvtypesChipsScroll.root.isVisible = false
+            if (isLayout(TV or EMULATOR)) setupTvKeyboard(binding)
         }
 
         binding.voiceSearch.setOnClickListener { searchView ->
@@ -284,6 +489,10 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
         selectedApis = DataStoreHelper.searchPreferenceProviders.toMutableSet()
 
         binding.searchFilter.setOnClickListener { searchView ->
+            if (bannerProvider != null) {
+                pickBannerProvider(binding)
+                return@setOnClickListener
+            }
             searchView?.context?.let { ctx ->
                 val validAPIs = ctx.filterProviderByPreferredMedia(hasHomePageIsRequired = false)
                 var currentValidApis = listOf<MainAPI>()
@@ -449,16 +658,22 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
                     searchViewModel.clearSuggestions()
                 } else {
                     // Fetch suggestions when user is typing (if enabled)
-                    if (isSearchSuggestionsEnabled) {
+                    if (isSearchSuggestionsEnabled && !keyboardMode) {
                         searchViewModel.fetchSuggestions(newText)
                     }
+                    // The on-screen keyboard searches while you type
+                    if (keyboardMode) scheduleLiveSearch(newText)
                 }
+                val isBanner = bannerProvider != null
                 binding.apply {
                     searchHistoryRecycler.isVisible = showHistory
-                    searchMasterRecycler.isVisible = !showHistory && isAdvancedSearch
-                    searchAutofitResults.isVisible = !showHistory && !isAdvancedSearch
+                    searchMasterRecycler.isVisible =
+                        !showHistory && isAdvancedSearch && !isBanner
+                    searchAutofitResults.isVisible =
+                        !showHistory && (!isAdvancedSearch || isBanner)
                     // Hide suggestions when showing history or showing search results
-                    searchSuggestionsRecycler.isVisible = !showHistory && isSearchSuggestionsEnabled
+                    searchSuggestionsRecycler.isVisible =
+                        !showHistory && isSearchSuggestionsEnabled && !keyboardMode
                 }
 
                 return true
@@ -470,7 +685,7 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
                 is Resource.Success -> {
                     it.value.let { data ->
                         val list = data.list
-                        if (list.isNotEmpty()) {
+                        if (list.isNotEmpty() || bannerProvider != null) {
                             (binding.searchAutofitResults.adapter as? SearchAdapter)?.submitList(
                                 list
                             )

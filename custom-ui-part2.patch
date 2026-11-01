@@ -1,0 +1,1782 @@
+diff --git a/.github/workflows/build_apk.yml b/.github/workflows/build_apk.yml
+deleted file mode 100644
+index 75e4880..0000000
+--- a/.github/workflows/build_apk.yml
++++ /dev/null
+@@ -1,35 +0,0 @@
+-name: Build APK
+-
+-on:
+-  push:
+-  workflow_dispatch:
+-
+-permissions:
+-  contents: read
+-
+-jobs:
+-  build:
+-    runs-on: ubuntu-latest
+-    steps:
+-      - uses: actions/checkout@v6
+-
+-      - name: Set up JDK 17
+-        uses: actions/setup-java@v5
+-        with:
+-          distribution: temurin
+-          java-version: 17
+-
+-      - name: Grant execute permission for gradlew
+-        run: chmod +x gradlew
+-
+-      - name: Setup Gradle
+-        uses: gradle/actions/setup-gradle@v5
+-
+-      - name: Build debug APK
+-        run: ./gradlew assemblePrereleaseDebug
+-
+-      - name: Upload APK
+-        uses: actions/upload-artifact@v7
+-        with:
+-          name: cloudstream-debug-apk
+-          path: app/build/outputs/apk/prerelease/debug/*.apk
+diff --git a/.github/workflows/custom_release.yml b/.github/workflows/custom_release.yml
+new file mode 100644
+index 0000000..ace502b
+--- /dev/null
++++ b/.github/workflows/custom_release.yml
+@@ -0,0 +1,151 @@
++name: Sync CloudStream and publish
++
++# Every day (and on demand) this brings the newest official CloudStream into this repo while
++# keeping the custom UI, then builds a signed APK and publishes it as the "pre-release"
++# release. The app's built-in updater reads that release, so installed copies update themselves.
++# Pushing your own changes to main also builds and publishes.
++#
++# Needs two repository secrets (Settings > Secrets and variables > Actions):
++#   SIGNING_KEYSTORE_BASE64  the signing key file, base64 encoded
++#   SIGNING_PASSWORD         the password of that key
++
++on:
++  schedule:
++    - cron: '23 5 * * *'
++  workflow_dispatch:
++  push:
++    branches: [ main ]
++    paths-ignore:
++      - '*.md'
++
++permissions:
++  contents: write
++  issues: write
++
++concurrency:
++  group: custom-release
++  cancel-in-progress: false
++
++env:
++  UPSTREAM_REPO: https://github.com/recloudstream/cloudstream.git
++  UPSTREAM_BRANCH: master
++  # Official commit this UI was first written on top of. Only used once, to link the history.
++  BASELINE_SHA: 5024ace2922a148d38df2a816b483b529789cf58
++
++jobs:
++  sync:
++    if: github.event_name != 'push'
++    runs-on: ubuntu-latest
++    outputs:
++      changed: ${{ steps.merge.outputs.changed }}
++    steps:
++      - uses: actions/checkout@v6
++        with:
++          fetch-depth: 0
++          ref: main
++
++      - name: Merge the newest CloudStream
++        id: merge
++        env:
++          GH_TOKEN: ${{ github.token }}
++        run: |
++          git config user.name "github-actions[bot]"
++          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
++          git remote add upstream "$UPSTREAM_REPO"
++          git fetch --no-tags upstream "$UPSTREAM_BRANCH"
++
++          if git merge-base --is-ancestor "upstream/$UPSTREAM_BRANCH" HEAD; then
++            echo "Already up to date with CloudStream."
++            echo "changed=false" >> "$GITHUB_OUTPUT"
++            exit 0
++          fi
++
++          # One time only: this repo started as a copy of CloudStream, so tell git which official
++          # commit it started from. Later merges then keep the custom UI and only bring in what
++          # changed upstream.
++          if ! git merge-base HEAD "upstream/$UPSTREAM_BRANCH" > /dev/null 2>&1; then
++            git merge -s ours --allow-unrelated-histories --no-edit \
++              -m "Link history to CloudStream $BASELINE_SHA" "$BASELINE_SHA"
++          fi
++
++          if ! git merge --no-edit -m "Merge newest CloudStream" "upstream/$UPSTREAM_BRANCH"; then
++            files=$(git diff --name-only --diff-filter=U | sed 's/^/- /')
++            git merge --abort
++            title="CloudStream update needs a manual merge"
++            if [ -z "$(gh issue list --state open --search "$title in:title" --json number --jq '.[0].number')" ]; then
++              body=$(printf 'The newest CloudStream changes overlap with the custom UI in:\n\n%s\n\nAsk Claude to resolve the merge (see CUSTOM_UI.md), then run this workflow again.' "$files")
++              gh issue create --title "$title" --body "$body"
++            fi
++            exit 1
++          fi
++
++          # The workflow token is not allowed to change workflow files, so keep ours
++          if ! git diff --quiet HEAD^1 HEAD -- .github/workflows; then
++            git rm -rfq --ignore-unmatch .github/workflows
++            git checkout HEAD^1 -- .github/workflows
++            git commit --amend --no-edit -q
++          fi
++
++          git push origin HEAD:main
++          echo "changed=true" >> "$GITHUB_OUTPUT"
++
++  build:
++    needs: sync
++    if: >-
++      ${{ always()
++      && (needs.sync.result == 'success' || needs.sync.result == 'skipped')
++      && (github.event_name != 'schedule' || needs.sync.outputs.changed == 'true') }}
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v6
++        with:
++          ref: ${{ github.event_name == 'push' && github.sha || 'main' }}
++
++      - name: Set up JDK 17
++        uses: actions/setup-java@v5
++        with:
++          distribution: temurin
++          java-version: 17
++
++      - name: Grant execute permission for gradlew
++        run: chmod +x gradlew
++
++      - name: Install signing key
++        env:
++          KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
++          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
++        run: |
++          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$SIGNING_PASSWORD" ]; then
++            echo "::error::Add the SIGNING_KEYSTORE_BASE64 and SIGNING_PASSWORD repository secrets first. Without a fixed key the app cannot update itself."
++            exit 1
++          fi
++          mkdir -p "$HOME/work/_temp/keystore"
++          echo "$KEYSTORE_BASE64" | base64 -d > "$HOME/work/_temp/keystore/custom-ui.jks"
++
++      - name: Setup Gradle
++        uses: gradle/actions/setup-gradle@v5
++
++      - name: Build signed APK
++        run: ./gradlew assemblePrereleaseRelease
++        env:
++          SIGNING_KEY_ALIAS: customui
++          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
++          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
++
++      - name: Publish release
++        env:
++          GH_TOKEN: ${{ github.token }}
++        run: |
++          SHA=$(git rev-parse HEAD)
++          gh release delete pre-release --cleanup-tag --yes || true
++          gh release create pre-release app/build/outputs/apk/prerelease/release/*.apk \
++            --target "$SHA" \
++            --prerelease \
++            --title "Custom build" \
++            --notes "Built from commit $SHA. Install the APK. Installed copies update themselves from new releases here."
++
++      - name: Keep a copy of the APK
++        uses: actions/upload-artifact@v7
++        with:
++          name: cloudstream-custom-apk
++          path: app/build/outputs/apk/prerelease/release/*.apk
+diff --git a/CUSTOM_UI.md b/CUSTOM_UI.md
+new file mode 100644
+index 0000000..b64fe0e
+--- /dev/null
++++ b/CUSTOM_UI.md
+@@ -0,0 +1,41 @@
++# Custom UI notes
++
++This repo is CloudStream plus a custom UI. A scheduled workflow (`.github/workflows/custom_release.yml`)
++merges the newest official CloudStream into `main` every day, builds a signed APK and publishes it as
++the `pre-release` release. The app's built-in updater reads that release, so installed copies update
++themselves and keep the custom UI.
++
++If the workflow opens an issue called "CloudStream update needs a manual merge", the official change
++overlaps with a line we changed. Resolve it using the table below, then run the workflow again.
++
++## What was added (new files, never conflict)
++
++| File | What it does |
++| --- | --- |
++| `ui/UiPrefs.kt` | Per-profile options (search provider, home style, tiles, focus style, provider switcher) |
++| `ui/home/HomeBrowse.kt` + `layout/browse_sheet.xml`, `browse_chip.xml` | Home category tiles and the browse sheet (category + sort by rating, release date, name) |
++| `ui/result/ProviderSwitcher.kt` | Dropdown on the result page to open the same title on another provider |
++| `drawable/card_focus_outline.xml` | Accent outline for focused cards |
++| `.github/workflows/custom_release.yml` | Daily upstream merge + signed build + release |
++
++## Small hooks in official files (where conflicts can happen)
++
++| File | Hook |
++| --- | --- |
++| `app/build.gradle.kts` | `UPDATE_REPO_OWNER` / `UPDATE_REPO_NAME` build config fields |
++| `utils/InAppUpdater.kt` | Two lines: repo owner and name come from the build config |
++| `CommonActivity.kt` | Six extra theme names in `loadThemes` |
++| `MainActivity.kt` | Bottom bar label mode, start tab, stronger active indicator |
++| `ui/settings/SettingsUI.kt` | Navigation and profile layout settings dialogs |
++| `ui/search/SearchFragment.kt` | Single-provider banner search, live search, TV keyboard (`setupTvKeyboard`) |
++| `ui/search/SearchAdaptor.kt`, `SearchResultBuilder.kt`, `SearchViewModel.kt` | `forceTitle`, focus lift, `saveToHistory` parameters |
++| `ui/home/HomeParentItemAdapterPreview.kt` | Cinematic hero and the browse tile holder |
++| `ui/result/ResultFragmentPhone.kt`, `ResultFragmentTv.kt` | One `ProviderSwitcher.bind(...)` call each |
++| `res/layout/fragment_home_head.xml`, `fragment_home_head_tv.xml` | `home_browse_holder` view |
++| `res/values/*.xml`, `res/xml/settings_ui.xml`, `drawable/outline_drawable.xml` | Themes, strings, settings entries, focus outline |
++
++## Signing
++
++Builds are signed with a fixed key so new versions install over old ones. The key is stored in the
++repository secrets `SIGNING_KEYSTORE_BASE64` and `SIGNING_PASSWORD`, never in the repo.
++If the key is replaced, installed apps cannot update and must be reinstalled once.
+diff --git a/app/build.gradle.kts b/app/build.gradle.kts
+index c714368..1e45f84 100644
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -139,6 +139,21 @@ android {
+             "ANILIST_KEY",
+             "\"" + (System.getenv("ANILIST_KEY") ?: localProperties["anilist.key"]) + "\""
+         )
++
++        // The in-app updater checks the GitHub repo the app was built in, so a fork keeps
++        // updating itself instead of switching to the official app. Falls back to upstream.
++        val updateRepo = (System.getenv("GITHUB_REPOSITORY") ?: "recloudstream/cloudstream")
++            .split("/")
++        buildConfigField(
++            "String",
++            "UPDATE_REPO_OWNER",
++            "\"" + updateRepo.getOrElse(0) { "recloudstream" } + "\""
++        )
++        buildConfigField(
++            "String",
++            "UPDATE_REPO_NAME",
++            "\"" + updateRepo.getOrElse(1) { "cloudstream" } + "\""
++        )
+         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+     }
+ 
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/UiPrefs.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/UiPrefs.kt
+new file mode 100644
+index 0000000..6d5f6d8
+--- /dev/null
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/UiPrefs.kt
+@@ -0,0 +1,72 @@
++package com.lagradost.cloudstream3.ui
++
++import android.view.View
++import android.view.ViewGroup
++import com.lagradost.cloudstream3.CloudStreamApp.Companion.getKey
++import com.lagradost.cloudstream3.CloudStreamApp.Companion.setKey
++import com.lagradost.cloudstream3.utils.DataStoreHelper
++
++/**
++ * Look and layout options that are stored per profile (account), so every profile
++ * keeps its own search provider, home style and so on.
++ *
++ * Watch history, resume watching, bookmarks, search history and the selected home provider
++ * are already stored per profile by [DataStoreHelper]; this keeps the new layout options
++ * consistent with that.
++ */
++object UiPrefs {
++    const val SEARCH_PROVIDER = "search_provider"
++    const val HOME_STYLE = "home_style"
++    const val FOCUS_STYLE = "focus_style"
++    const val HOME_TILES = "home_tiles"
++    const val PROVIDER_SWITCHER = "provider_switcher"
++
++    const val HOME_CLASSIC = "classic"
++    const val HOME_CINEMATIC = "cinematic"
++
++    const val FOCUS_LIFT = "lift"
++    const val FOCUS_BORDER = "border"
++
++    private fun path(name: String) = "${DataStoreHelper.currentAccount}/ui_$name"
++
++    fun getOpt(name: String, default: String): String =
++        getKey<String>(path(name)) ?: default
++
++    fun putOpt(name: String, value: String) = setKey(path(name), value)
++
++    /** Name of the single provider to search in, null if search uses all selected providers */
++    var searchProvider: String?
++        get() = getOpt(SEARCH_PROVIDER, "").ifBlank { null }
++        set(value) = putOpt(SEARCH_PROVIDER, value ?: "")
++
++    val isCinematicHome: Boolean get() = getOpt(HOME_STYLE, HOME_CLASSIC) == HOME_CINEMATIC
++
++    val areBrowseTilesEnabled: Boolean get() = getOpt(HOME_TILES, "on") == "on"
++
++    val isProviderSwitcherEnabled: Boolean get() = getOpt(PROVIDER_SWITCHER, "on") == "on"
++
++    val isLiftFocus: Boolean get() = getOpt(FOCUS_STYLE, FOCUS_LIFT) == FOCUS_LIFT
++
++    /**
++     * Slightly raise and enlarge a card while it is focused (TV and emulator layouts).
++     * The colored outline itself comes from the card's focus foreground drawable.
++     */
++    fun applyCardFocus(view: View, hasFocus: Boolean) {
++        val lift = isLiftFocus
++        val scale = if (hasFocus && lift) 1.06f else 1f
++        val lifted = if (hasFocus && lift) 12f else 0f
++        if (hasFocus && lift) {
++            // Make sure the enlarged card is not cut off by its parents
++            (view.parent as? ViewGroup)?.apply {
++                clipChildren = false
++                clipToPadding = false
++            }
++        }
++        view.animate()
++            .scaleX(scale)
++            .scaleY(scale)
++            .translationZ(lifted)
++            .setDuration(120)
++            .start()
++    }
++}
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/home/HomeBrowse.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/home/HomeBrowse.kt
+new file mode 100644
+index 0000000..dc9046d
+--- /dev/null
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/home/HomeBrowse.kt
+@@ -0,0 +1,262 @@
++package com.lagradost.cloudstream3.ui.home
++
++import android.content.Context
++import android.graphics.drawable.GradientDrawable
++import android.graphics.drawable.StateListDrawable
++import android.view.Gravity
++import android.view.LayoutInflater
++import android.view.View
++import android.view.ViewGroup
++import android.widget.LinearLayout
++import android.widget.TextView
++import androidx.core.view.isVisible
++import com.google.android.material.bottomsheet.BottomSheetBehavior
++import com.google.android.material.bottomsheet.BottomSheetDialog
++import com.google.android.material.chip.Chip
++import com.google.android.material.chip.ChipGroup
++import com.lagradost.cloudstream3.AnimeSearchResponse
++import com.lagradost.cloudstream3.MovieSearchResponse
++import com.lagradost.cloudstream3.R
++import com.lagradost.cloudstream3.SearchResponse
++import com.lagradost.cloudstream3.TvSeriesSearchResponse
++import com.lagradost.cloudstream3.TvType
++import com.lagradost.cloudstream3.databinding.BrowseSheetBinding
++import com.lagradost.cloudstream3.ui.UiPrefs
++import com.lagradost.cloudstream3.ui.search.SEARCH_ACTION_LOAD
++import com.lagradost.cloudstream3.ui.search.SearchAdapter
++import com.lagradost.cloudstream3.ui.search.SearchHelper
++import com.lagradost.cloudstream3.ui.settings.Globals.EMULATOR
++import com.lagradost.cloudstream3.ui.settings.Globals.TV
++import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
++import com.lagradost.cloudstream3.utils.UIHelper.colorFromAttribute
++import com.lagradost.cloudstream3.utils.UIHelper.getSpanCount
++import com.lagradost.cloudstream3.utils.UIHelper.toPx
++
++/**
++ * Quick browsing on the home screen: a grid of category tiles plus a full browse sheet where
++ * you can pick a category and sort by rating, release date or name.
++ *
++ * It works on the titles the selected provider already put on the home page, so it needs no
++ * extra network requests and works with every provider. Rating and release year are only
++ * available when the provider supplies them, titles without that data are listed last.
++ */
++object HomeBrowse {
++    enum class Category(val labelRes: Int, val types: Set<TvType>?) {
++        ALL(R.string.all, null),
++        MOVIES(R.string.movies, setOf(TvType.Movie)),
++        SHOWS(R.string.tv_series, setOf(TvType.TvSeries)),
++        ANIME(R.string.anime, setOf(TvType.Anime, TvType.AnimeMovie, TvType.OVA)),
++        CARTOONS(R.string.cartoons, setOf(TvType.Cartoon)),
++        DOCS(R.string.documentaries, setOf(TvType.Documentary)),
++        ASIAN(R.string.asian_drama, setOf(TvType.AsianDrama)),
++        LIVE(R.string.livestreams, setOf(TvType.Live)),
++        OTHER(
++            R.string.others,
++            setOf(
++                TvType.Torrent, TvType.Others, TvType.Music, TvType.AudioBook,
++                TvType.CustomMedia, TvType.Audio, TvType.Podcast, TvType.Video
++            )
++        ),
++    }
++
++    enum class Sort(val labelRes: Int) {
++        DEFAULT(R.string.browse_sort_default),
++        RATING(R.string.sort_rating_desc),
++        NEWEST(R.string.sort_release_date_new),
++        NAME(R.string.sort_alphabetical_a),
++    }
++
++    private val tileCategories = listOf(
++        Category.MOVIES, Category.SHOWS, Category.ANIME,
++        Category.CARTOONS, Category.DOCS, Category.ASIAN
++    )
++
++    /** Every title of the current home page, without duplicates */
++    fun collect(page: Map<String, HomeViewModel.ExpandableHomepageList>): List<SearchResponse> =
++        page.values.flatMap { it.list.list }.distinctBy { it.url }
++
++    fun filter(items: List<SearchResponse>, category: Category): List<SearchResponse> {
++        val types = category.types ?: return items
++        return items.filter { item ->
++            val type = item.type
++            // Titles without a type can only be found under "Others"
++            if (type == null) category == Category.OTHER else types.contains(type)
++        }
++    }
++
++    private fun yearOf(item: SearchResponse): Int? = when (item) {
++        is MovieSearchResponse -> item.year
++        is TvSeriesSearchResponse -> item.year
++        is AnimeSearchResponse -> item.year
++        else -> null
++    }
++
++    /** Stable sort, titles without the sorted value keep their order at the end */
++    fun sorted(items: List<SearchResponse>, sort: Sort): List<SearchResponse> = when (sort) {
++        Sort.DEFAULT -> items
++        Sort.RATING -> items.sortedByDescending { it.score?.toDouble(10) ?: -1.0 }
++        Sort.NEWEST -> items.sortedByDescending { yearOf(it) ?: -1 }
++        Sort.NAME -> items.sortedBy { it.name.lowercase() }
++    }
++
++    private fun tileBackground(context: Context): StateListDrawable {
++        val density = context.resources.displayMetrics.density
++        val color = context.colorFromAttribute(R.attr.boxItemBackground)
++        fun shape(stroke: Boolean) = GradientDrawable().apply {
++            setColor(color)
++            cornerRadius = 12 * density
++            if (stroke) setStroke((3 * density).toInt(), context.colorFromAttribute(R.attr.colorPrimary))
++        }
++        return StateListDrawable().apply {
++            addState(intArrayOf(android.R.attr.state_focused), shape(true))
++            addState(intArrayOf(android.R.attr.state_pressed), shape(true))
++            addState(intArrayOf(), shape(false))
++        }
++    }
++
++    private fun makeTile(context: Context, label: String, onClick: () -> Unit): TextView =
++        TextView(context).apply {
++            text = label
++            textSize = 15f
++            gravity = Gravity.CENTER
++            setTextColor(context.colorFromAttribute(R.attr.textColor))
++            setTypeface(typeface, android.graphics.Typeface.BOLD)
++            background = tileBackground(context)
++            isFocusable = true
++            isClickable = true
++            setOnClickListener { onClick() }
++            setOnFocusChangeListener { view, hasFocus ->
++                if (isLayout(TV or EMULATOR)) UiPrefs.applyCardFocus(view, hasFocus)
++            }
++        }
++
++    /**
++     * Fills [holder] with the category tiles (only categories that have titles) and a wide
++     * "Browse all and sort" tile. Safe to call again whenever the home page changes.
++     */
++    fun bindTiles(
++        holder: LinearLayout,
++        items: List<SearchResponse>,
++        getItems: () -> List<SearchResponse>,
++        getProvider: () -> String?
++    ) {
++        val present = tileCategories.filter { filter(items, it).isNotEmpty() }
++        val signature = present.joinToString(",") { it.name }
++        if (holder.getTag(R.id.home_browse_holder) == signature && holder.childCount > 0) return
++        holder.setTag(R.id.home_browse_holder, signature)
++        holder.removeAllViews()
++
++        val context = holder.context
++        holder.setPadding(8.toPx, 8.toPx, 8.toPx, 4.toPx)
++
++        present.chunked(3).forEach { rowCategories ->
++            val row = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
++            rowCategories.forEach { category ->
++                val tile = makeTile(context, context.getString(category.labelRes)) {
++                    show(context, getItems(), getProvider(), category)
++                }
++                row.addView(tile, LinearLayout.LayoutParams(0, 64.toPx, 1f).apply {
++                    setMargins(4.toPx, 4.toPx, 4.toPx, 4.toPx)
++                })
++            }
++            // Keep the tile width the same on a row that is not full
++            repeat(3 - rowCategories.size) {
++                row.addView(View(context), LinearLayout.LayoutParams(0, 1, 1f))
++            }
++            holder.addView(
++                row,
++                LinearLayout.LayoutParams(
++                    ViewGroup.LayoutParams.MATCH_PARENT,
++                    ViewGroup.LayoutParams.WRAP_CONTENT
++                )
++            )
++        }
++
++        val allTile = makeTile(context, context.getString(R.string.browse_all_sort)) {
++            show(context, getItems(), getProvider(), Category.ALL)
++        }
++        holder.addView(allTile, LinearLayout.LayoutParams(
++            ViewGroup.LayoutParams.MATCH_PARENT,
++            52.toPx
++        ).apply { setMargins(4.toPx, 4.toPx, 4.toPx, 4.toPx) })
++
++        holder.isVisible = true
++    }
++
++    /** The full browse sheet: pick a category, sort by rating, release date or name */
++    fun show(
++        context: Context,
++        items: List<SearchResponse>,
++        providerName: String?,
++        initial: Category
++    ) {
++        val dialog = BottomSheetDialog(context)
++        val binding = BrowseSheetBinding.inflate(LayoutInflater.from(context))
++        val height = (context.resources.displayMetrics.heightPixels * 0.92f).toInt()
++        binding.root.layoutParams =
++            ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, height)
++        dialog.setContentView(binding.root)
++        dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
++        dialog.behavior.skipCollapsed = true
++
++        binding.browseSubtitle.text =
++            providerName?.let { context.getString(R.string.browse_from, it) } ?: ""
++
++        var category = initial
++        var sort = Sort.DEFAULT
++
++        val adapter = SearchAdapter(binding.browseResults) { callback ->
++            if (callback.action == SEARCH_ACTION_LOAD) dialog.dismiss()
++            SearchHelper.handleSearchClickCallback(callback)
++        }
++        binding.browseResults.spanCount = context.getSpanCount()
++        binding.browseResults.adapter = adapter
++
++        fun refresh() {
++            val list = sorted(filter(items, category), sort)
++            adapter.submitList(list)
++            binding.browseEmpty.isVisible = list.isEmpty()
++            binding.browseResults.isVisible = list.isNotEmpty()
++        }
++
++        val inflater = LayoutInflater.from(context)
++        fun addChip(group: ChipGroup, label: String, checked: Boolean, onSelected: () -> Unit) {
++            val chip = inflater.inflate(R.layout.browse_chip, group, false) as Chip
++            chip.text = label
++            chip.id = View.generateViewId()
++            group.addView(chip)
++            chip.isChecked = checked
++            chip.setOnCheckedChangeListener { _, isChecked ->
++                if (isChecked) onSelected()
++            }
++        }
++
++        // Only offer categories that actually have titles
++        Category.values()
++            .filter { it == Category.ALL || it == initial || filter(items, it).isNotEmpty() }
++            .forEach { entry ->
++                addChip(
++                    binding.browseCategoryGroup,
++                    context.getString(entry.labelRes),
++                    entry == initial
++                ) {
++                    category = entry
++                    refresh()
++                }
++            }
++
++        Sort.values().forEach { entry ->
++            addChip(
++                binding.browseSortGroup,
++                context.getString(entry.labelRes),
++                entry == sort
++            ) {
++                sort = entry
++                refresh()
++            }
++        }
++
++        refresh()
++        dialog.show()
++    }
++}
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/home/HomeParentItemAdapterPreview.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/home/HomeParentItemAdapterPreview.kt
+index 1d1a88f..b589c78 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/ui/home/HomeParentItemAdapterPreview.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/home/HomeParentItemAdapterPreview.kt
+@@ -4,8 +4,11 @@ import android.content.Context
+ import android.os.Bundle
+ import android.os.Parcelable
+ import android.view.LayoutInflater
++import android.graphics.Outline
+ import android.view.View
+ import android.view.ViewGroup
++import android.view.ViewOutlineProvider
++import android.widget.LinearLayout
+ import android.widget.ImageView
+ import androidx.appcompat.app.AlertDialog
+ import androidx.appcompat.widget.SearchView
+@@ -33,6 +36,7 @@ import com.lagradost.cloudstream3.mvvm.Resource
+ import com.lagradost.cloudstream3.mvvm.debugException
+ import com.lagradost.cloudstream3.mvvm.logError
+ import com.lagradost.cloudstream3.mvvm.observe
++import com.lagradost.cloudstream3.ui.UiPrefs
+ import com.lagradost.cloudstream3.ui.ViewHolderState
+ import com.lagradost.cloudstream3.ui.WatchType
+ import com.lagradost.cloudstream3.ui.account.AccountHelper.showAccountEditDialog
+@@ -340,6 +344,71 @@ class HomeParentItemAdapterPreview(
+ 
+         private val homeNonePadding: View = itemView.findViewById(R.id.home_none_padding)
+ 
++        private val browseHolder: LinearLayout? = itemView.findViewById(R.id.home_browse_holder)
++
++        /** Category tiles and the browse sheet, built from the titles on the home page */
++        private fun updateBrowseTiles(
++            page: Resource<Map<String, HomeViewModel.ExpandableHomepageList>>
++        ) {
++            val holder = browseHolder ?: return
++            val items = (page as? Resource.Success)?.value?.let { HomeBrowse.collect(it) }
++                ?: emptyList()
++            if (items.isEmpty() || !UiPrefs.areBrowseTilesEnabled) {
++                holder.isVisible = false
++                return
++            }
++            HomeBrowse.bindTiles(
++                holder,
++                items,
++                getItems = {
++                    (viewModel.page.value as? Resource.Success)?.value?.let { HomeBrowse.collect(it) }
++                        ?: emptyList()
++                },
++                getProvider = { viewModel.apiName.value }
++            )
++        }
++
++        init {
++            if (UiPrefs.isCinematicHome && !isLayout(TV or EMULATOR)) applyCinematicHome()
++        }
++
++        /**
++         * Profile option "Cinematic": an inset hero banner with rounded corners and
++         * bigger, tile-like category filters.
++         */
++        private fun applyCinematicHome() {
++            val density = itemView.resources.displayMetrics.density
++            val margin = (12 * density).toInt()
++
++            previewViewpagerText.apply {
++                (layoutParams as? ViewGroup.MarginLayoutParams)?.let { lp ->
++                    lp.marginStart = margin
++                    lp.marginEnd = margin
++                    lp.topMargin = margin / 2
++                    lp.bottomMargin = margin / 2
++                    lp.height = (420 * density).toInt()
++                    layoutParams = lp
++                }
++                clipToOutline = true
++                outlineProvider = object : ViewOutlineProvider() {
++                    override fun getOutline(view: View, outline: Outline) {
++                        outline.setRoundRect(0, 0, view.width, view.height, 18 * density)
++                    }
++                }
++            }
++
++            val group = itemView.findViewById<ViewGroup>(R.id.home_select_group) ?: return
++            for (i in 0 until group.childCount) {
++                (group.getChildAt(i) as? Chip)?.apply {
++                    chipMinHeight = 44 * density
++                    chipCornerRadius = 12 * density
++                    chipStartPadding = 14 * density
++                    chipEndPadding = 14 * density
++                    textSize = 15f
++                }
++            }
++        }
++
+         fun onSelect(item: LoadResponse, position: Int) {
+             (binding as? FragmentHomeHeadTvBinding)?.apply {
+                 homePreviewDescription.isGone = item.plot.isNullOrBlank()
+@@ -797,6 +866,9 @@ class HomeParentItemAdapterPreview(
+                         binding.homePreviewReloadProvider.isGone = (name == noneApi.name)
+                     }
+                 }*/
++                observe(viewModel.page) {
++                    updateBrowseTiles(it)
++                }
+                 observe(viewModel.resumeWatching) {
+                     updateResume(it)
+                 }
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/result/ProviderSwitcher.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/result/ProviderSwitcher.kt
+new file mode 100644
+index 0000000..99fc900
+--- /dev/null
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/result/ProviderSwitcher.kt
+@@ -0,0 +1,154 @@
++package com.lagradost.cloudstream3.ui.result
++
++import android.content.Context
++import android.view.View
++import android.widget.PopupMenu
++import androidx.fragment.app.Fragment
++import androidx.navigation.NavOptions
++import androidx.navigation.fragment.findNavController
++import com.google.android.material.button.MaterialButton
++import com.lagradost.cloudstream3.R
++import com.lagradost.cloudstream3.amap
++import com.lagradost.cloudstream3.mvvm.Resource
++import com.lagradost.cloudstream3.ui.APIRepository
++import com.lagradost.cloudstream3.ui.UiPrefs
++import com.lagradost.cloudstream3.ui.settings.Globals.EMULATOR
++import com.lagradost.cloudstream3.ui.settings.Globals.TV
++import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
++import com.lagradost.cloudstream3.utils.AppContextUtils.filterProviderByPreferredMedia
++import com.lagradost.cloudstream3.utils.Coroutines.ioSafe
++import com.lagradost.cloudstream3.utils.Coroutines.main
++import com.lagradost.cloudstream3.utils.UIHelper.navigate
++import kotlinx.coroutines.Dispatchers
++import kotlinx.coroutines.withContext
++import kotlinx.coroutines.withTimeoutOrNull
++
++/**
++ * When the same movie or show exists on several providers, this turns the provider badge on
++ * the result page into a small dropdown that jumps to the same title on another provider.
++ *
++ * Other providers are searched by title in the background, only exact title matches are shown.
++ * Everything lives in this file, the result pages only call [bind].
++ */
++object ProviderSwitcher {
++    data class Alternative(val apiName: String, val url: String, val title: String)
++
++    private const val SEARCH_TIMEOUT_MS = 8000L
++    private const val MAX_PROVIDERS = 30
++
++    private val cache = HashMap<String, List<Alternative>>()
++
++    private fun normalize(text: String): String =
++        text.lowercase()
++            .replace(Regex("\\(\\d{4}\\)"), " ")
++            .replace(Regex("[^\\p{L}\\p{N}]+"), " ")
++            .trim()
++
++    private suspend fun findAlternatives(
++        context: Context,
++        currentApi: String,
++        title: String
++    ): List<Alternative> {
++        val key = normalize(title)
++        if (key.length < 2) return emptyList()
++        val cacheKey = "$key|$currentApi"
++        synchronized(cache) { cache[cacheKey] }?.let { return it }
++
++        val providers = context.filterProviderByPreferredMedia(hasHomePageIsRequired = false)
++            .filter { it.name != currentApi }
++            .take(MAX_PROVIDERS)
++
++        val found = ArrayList<Alternative>()
++        withContext(Dispatchers.IO) {
++            providers.amap { api ->
++                val result = withTimeoutOrNull(SEARCH_TIMEOUT_MS) {
++                    APIRepository(api).search(title, 1)
++                }
++                if (result is Resource.Success) {
++                    result.value.items.firstOrNull { normalize(it.name) == key }?.let { match ->
++                        synchronized(found) {
++                            found.add(Alternative(api.name, match.url, match.name))
++                        }
++                    }
++                }
++            }
++        }
++
++        val sorted = synchronized(found) { found.sortedBy { it.apiName.lowercase() } }
++        synchronized(cache) { cache[cacheKey] = sorted }
++        return sorted
++    }
++
++    private fun open(fragment: Fragment, alternative: Alternative) {
++        val activity = fragment.activity ?: return
++        val currentDestination: Int? = try {
++            fragment.findNavController().currentDestination?.id
++        } catch (_: Throwable) {
++            null
++        }
++        if (currentDestination == null) return
++        val resultsId = if (isLayout(TV or EMULATOR)) {
++            R.id.global_to_navigation_results_tv
++        } else {
++            R.id.global_to_navigation_results_phone
++        }
++        // Replace the current result page, so back goes to where you came from
++        activity.navigate(
++            resultsId,
++            ResultFragment.newInstance(alternative.url, alternative.apiName, alternative.title),
++            NavOptions.Builder().setPopUpTo(currentDestination, true).build()
++        )
++    }
++
++    /**
++     * @param button the provider badge, it becomes a dropdown if the title exists elsewhere
++     * @param title title of the currently opened result
++     * @param currentApi name of the provider the result is currently loaded from
++     * @param openInBrowser what a long press does, the badge used to open the site on click
++     */
++    fun bind(
++        fragment: Fragment,
++        button: MaterialButton,
++        title: String,
++        currentApi: String,
++        openInBrowser: () -> Unit
++    ) {
++        if (!UiPrefs.isProviderSwitcherEnabled) return
++        val context = fragment.context?.applicationContext ?: return
++        val key = "$currentApi|${normalize(title)}"
++        if (button.getTag(R.id.result_meta_site) == key) return
++        button.setTag(R.id.result_meta_site, key)
++
++        ioSafe {
++            val alternatives = findAlternatives(context, currentApi, title)
++            if (alternatives.isEmpty()) return@ioSafe
++            main {
++                if (fragment.view == null || button.getTag(R.id.result_meta_site) != key) {
++                    return@main
++                }
++                button.setIconResource(R.drawable.ic_baseline_keyboard_arrow_down_24)
++                button.iconGravity = MaterialButton.ICON_GRAVITY_TEXT_END
++                button.isFocusable = true
++                button.setOnClickListener { anchor: View ->
++                    val menu = PopupMenu(anchor.context, anchor)
++                    menu.menu.add(0, 0, 0, currentApi).apply {
++                        isCheckable = true
++                        isChecked = true
++                    }
++                    alternatives.forEachIndexed { index, alternative ->
++                        menu.menu.add(0, index + 1, index + 1, alternative.apiName)
++                    }
++                    menu.setOnMenuItemClickListener { item ->
++                        alternatives.getOrNull(item.itemId - 1)?.let { open(fragment, it) }
++                        true
++                    }
++                    menu.show()
++                }
++                button.setOnLongClickListener {
++                    openInBrowser()
++                    true
++                }
++            }
++        }
++    }
++}
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/result/ResultFragmentPhone.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/result/ResultFragmentPhone.kt
+index 38b24b2..8293c99 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/ui/result/ResultFragmentPhone.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/result/ResultFragmentPhone.kt
+@@ -939,6 +939,15 @@ open class ResultFragmentPhone : BaseFragment<FragmentResultSwipeBinding>(
+                     resultNoEpisodes.setText(d.noEpisodesFoundText)
+                     resultTitle.setText(d.titleText)
+                     resultMetaSite.setText(d.apiName)
++                    // Dropdown to jump to the same title on another provider
++                    getStoredData()?.let { stored ->
++                        ProviderSwitcher.bind(
++                            this@ResultFragmentPhone,
++                            resultMetaSite,
++                            d.title,
++                            stored.apiName
++                        ) { context?.openBrowser(stored.url) }
++                    }
+                     resultMetaType.setText(d.typeText)
+                     resultMetaYear.setText(d.yearText)
+                     resultMetaDuration.setText(d.durationText)
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/result/ResultFragmentTv.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/result/ResultFragmentTv.kt
+index c316fae..d2cb193 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/ui/result/ResultFragmentTv.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/result/ResultFragmentTv.kt
+@@ -868,6 +868,15 @@ class ResultFragmentTv : BaseFragment<FragmentResultTvBinding>(
+                         resultNoEpisodes.setText(d.noEpisodesFoundText)
+                         resultTitle.setText(d.titleText)
+                         resultMetaSite.setText(d.apiName)
++                        // Dropdown to jump to the same title on another provider
++                        getStoredData()?.let { stored ->
++                            ProviderSwitcher.bind(
++                                this@ResultFragmentTv,
++                                resultMetaSite,
++                                d.title,
++                                stored.apiName
++                            ) { }
++                        }
+                         resultMetaType.setText(d.typeText)
+                         resultMetaYear.setText(d.yearText)
+                         resultMetaDuration.setText(d.durationText)
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchAdaptor.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchAdaptor.kt
+index 7b63b6e..80cc063 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchAdaptor.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchAdaptor.kt
+@@ -33,6 +33,8 @@ class SearchClickCallback(
+ class SearchAdapter(
+     private val resView: AutofitRecyclerView,
+     private val isHorizontal:Boolean = false,
++    /** Always show the title on the card, used by the banner search layout */
++    private val forceTitle: Boolean = false,
+     private val clickCallback: (SearchClickCallback) -> Unit,
+ ) : NoStateAdapter<SearchResponse>(diffCallback = BaseDiffCallback(itemSame = { a, b ->
+     if (a.id != null || b.id != null) {
+@@ -94,6 +96,9 @@ class SearchAdapter(
+                 imageView.layoutParams = params
+             }
+         }
+-        SearchResultBuilder.bind(clickCallback, item, position, holder.view.root)
++        SearchResultBuilder.bind(
++            clickCallback, item, position, holder.view.root,
++            forceTitle = forceTitle
++        )
+     }
+ }
+\ No newline at end of file
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchFragment.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchFragment.kt
+index dd5b977..975b83f 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchFragment.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchFragment.kt
+@@ -5,18 +5,28 @@ import android.content.Intent
+ import android.content.DialogInterface
+ import android.speech.RecognizerIntent
+ import android.speech.SpeechRecognizer
++import android.content.res.ColorStateList
++import android.graphics.Color
++import android.graphics.drawable.GradientDrawable
++import android.graphics.drawable.StateListDrawable
+ import android.os.Bundle
++import android.os.Handler
++import android.os.Looper
++import android.view.Gravity
+ import android.view.LayoutInflater
+ import android.view.View
+ import android.view.ViewGroup
+ import android.view.WindowManager
+ import android.widget.AbsListView
+ import android.widget.ArrayAdapter
++import android.widget.FrameLayout
+ import android.widget.ImageView
++import android.widget.LinearLayout
+ import android.widget.ListView
+ import android.widget.TextView
+ import androidx.appcompat.app.AlertDialog
+ import androidx.appcompat.widget.SearchView
++import androidx.core.graphics.ColorUtils
+ import androidx.core.view.isVisible
+ import androidx.fragment.app.activityViewModels
+ import androidx.preference.PreferenceManager
+@@ -57,6 +67,7 @@ import com.lagradost.cloudstream3.ui.home.HomeViewModel
+ import com.lagradost.cloudstream3.ui.home.ParentItemAdapter
+ import com.lagradost.cloudstream3.ui.result.FOCUS_SELF
+ import com.lagradost.cloudstream3.ui.result.setLinearListLayout
++import com.lagradost.cloudstream3.ui.UiPrefs
+ import com.lagradost.cloudstream3.ui.setRecycledViewPool
+ import com.lagradost.cloudstream3.ui.settings.Globals.EMULATOR
+ import com.lagradost.cloudstream3.ui.settings.Globals.PHONE
+@@ -74,13 +85,16 @@ import com.lagradost.cloudstream3.utils.Coroutines.ioSafe
+ import com.lagradost.cloudstream3.utils.Coroutines.main
+ import com.lagradost.cloudstream3.utils.DataStoreHelper
+ import com.lagradost.cloudstream3.utils.DataStoreHelper.currentAccount
++import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showBottomDialog
+ import com.lagradost.cloudstream3.utils.SubtitleHelper
+ import com.lagradost.cloudstream3.utils.BackPressedCallbackHelper.attachBackPressedCallback
+ import com.lagradost.cloudstream3.utils.BackPressedCallbackHelper.detachBackPressedCallback
++import com.lagradost.cloudstream3.utils.UIHelper.colorFromAttribute
+ import com.lagradost.cloudstream3.utils.UIHelper.dismissSafe
+ import com.lagradost.cloudstream3.utils.UIHelper.fixSystemBarsPadding
+ import com.lagradost.cloudstream3.utils.UIHelper.getSpanCount
+ import com.lagradost.cloudstream3.utils.UIHelper.hideKeyboard
++import com.lagradost.cloudstream3.utils.UIHelper.toPx
+ import java.util.Locale
+ import java.util.concurrent.locks.ReentrantLock
+ 
+@@ -113,6 +127,14 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
+     private val searchViewModel: SearchViewModel by activityViewModels()
+     private var bottomSheetDialog: BottomSheetDialog? = null
+ 
++    /** Name of the one provider to search in (banner search layout), null if the mode is off */
++    private val bannerProvider: String? get() = UiPrefs.searchProvider
++
++    /** True when the on-screen keyboard (TV and emulator, banner search) is in use */
++    private var keyboardMode = false
++    private val liveHandler = Handler(Looper.getMainLooper())
++    private var liveRunnable: Runnable? = null
++
+     private val speechRecognizerLauncher =
+         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+             if (result.resultCode == Activity.RESULT_OK) {
+@@ -141,6 +163,8 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
+     }
+ 
+     override fun onDestroyView() {
++        liveRunnable?.let { liveHandler.removeCallbacks(it) }
++        keyboardMode = false
+         hideKeyboard()
+         bottomSheetDialog?.ownHide()
+         activity?.detachBackPressedCallback("SearchFragment")
+@@ -166,11 +190,21 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
+      * If that results in no available providers then only filter
+      * providers by preferred media
+      **/
+-    fun search(query: String?) {
++    fun search(query: String?, saveToHistory: Boolean = true) {
+         if (query == null) return
+         searchViewModel.clearSuggestions()
+         // don't resume state from prev search
+         (binding?.searchMasterRecycler?.adapter as? BaseAdapter<*, *>)?.clearState()
++
++        // Single-provider mode: only that provider is searched, results are shown as banners
++        bannerProvider?.let { provider ->
++            searchViewModel.searchAndCancel(
++                query = query,
++                providersActive = setOf(provider),
++                saveToHistory = saveToHistory
++            )
++            return
++        }
+         context?.let { ctx ->
+             val default = enumValues<TvType>().sorted().filter { it != TvType.NSFW }
+                 .map { it.ordinal.toString() }.toSet()
+@@ -219,6 +253,167 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
+         }
+     }
+ 
++    private fun scheduleLiveSearch(text: String) {
++        liveRunnable?.let { liveHandler.removeCallbacks(it) }
++        if (text.length < 2) return
++        val runnable = Runnable { search(text, saveToHistory = false) }
++        liveRunnable = runnable
++        liveHandler.postDelayed(runnable, 450)
++    }
++
++    /** Pick the single provider used by the banner search, or turn the mode off */
++    private fun pickBannerProvider(binding: FragmentSearchBinding) {
++        val ctx = context ?: return
++        val previous = UiPrefs.searchProvider
++        val providers = ctx.filterProviderByPreferredMedia(hasHomePageIsRequired = false)
++            .map { it.name }.distinct().sortedBy { it.lowercase() }
++        val names = listOf(getString(R.string.ui_search_provider_off)) + providers
++        val values = listOf("") + providers
++        activity?.showBottomDialog(
++            names,
++            values.indexOf(previous ?: "").coerceAtLeast(0),
++            getString(R.string.ui_search_provider_settings),
++            true,
++            {}
++        ) { index ->
++            val picked = values[index].ifBlank { null }
++            UiPrefs.searchProvider = picked
++            if ((picked == null) != (previous == null)) {
++                // Layout changes between banners and the normal search, so rebuild the screen
++                activity?.recreate()
++            } else if (picked != previous) {
++                search(binding.mainSearch.query.toString())
++            }
++        }
++    }
++
++    /**
++     * Builds an on-screen keyboard on the left and puts the results on the right.
++     * Done in code so the layout files (and their shared view binding) stay untouched.
++     */
++    private fun setupTvKeyboard(binding: FragmentSearchBinding) {
++        val ctx = binding.root.context
++        val results = binding.searchAutofitResults
++        val history = binding.searchHistoryRecycler
++        val parent = results.parent as? ViewGroup ?: return
++        if (history.parent != parent) return
++        keyboardMode = true
++
++        val startMargin = (results.layoutParams as? ViewGroup.MarginLayoutParams)?.marginStart ?: 0
++        val index = parent.indexOfChild(results)
++        parent.removeView(results)
++        parent.removeView(history)
++
++        val matchParent = ViewGroup.LayoutParams.MATCH_PARENT
++
++        // Results replace the history list as soon as something is typed
++        val rightPane = FrameLayout(ctx).apply {
++            layoutParams = LinearLayout.LayoutParams(0, matchParent, 1f)
++        }
++        rightPane.addView(history, FrameLayout.LayoutParams(matchParent, matchParent))
++        rightPane.addView(results, FrameLayout.LayoutParams(matchParent, matchParent))
++
++        val keyboard = LinearLayout(ctx).apply {
++            orientation = LinearLayout.VERTICAL
++            layoutParams = LinearLayout.LayoutParams(320.toPx, matchParent)
++            setPadding(12.toPx, 12.toPx, 12.toPx, 12.toPx)
++            setBackgroundColor(ctx.colorFromAttribute(R.attr.primaryBlackBackground))
++        }
++
++        val keyColor = ctx.colorFromAttribute(R.attr.boxItemBackground)
++        val keyText = ctx.colorFromAttribute(R.attr.textColor)
++        val activeColor = ctx.colorFromAttribute(R.attr.colorPrimary)
++        // Readable text on whatever accent color is selected
++        val activeText =
++            if (ColorUtils.calculateLuminance(activeColor) > 0.5) Color.BLACK else Color.WHITE
++
++        fun keyBackground(color: Int) = GradientDrawable().apply {
++            setColor(color)
++            cornerRadius = 8.toPx.toFloat()
++        }
++
++        fun makeKey(label: String, textSizeSp: Float, onClick: () -> Unit): TextView =
++            TextView(ctx).apply {
++                text = label
++                textSize = textSizeSp
++                gravity = Gravity.CENTER
++                isFocusable = true
++                isClickable = true
++                id = View.generateViewId()
++                background = StateListDrawable().apply {
++                    addState(intArrayOf(android.R.attr.state_focused), keyBackground(activeColor))
++                    addState(intArrayOf(android.R.attr.state_pressed), keyBackground(activeColor))
++                    addState(intArrayOf(), keyBackground(keyColor))
++                }
++                setTextColor(
++                    ColorStateList(
++                        arrayOf(
++                            intArrayOf(android.R.attr.state_focused),
++                            intArrayOf(android.R.attr.state_pressed),
++                            intArrayOf()
++                        ),
++                        intArrayOf(activeText, activeText, keyText)
++                    )
++                )
++                layoutParams = LinearLayout.LayoutParams(0, 44.toPx, 1f).apply {
++                    setMargins(3.toPx, 3.toPx, 3.toPx, 3.toPx)
++                }
++                setOnClickListener { onClick() }
++            }
++
++        fun addRow(vararg keys: TextView) {
++            keyboard.addView(LinearLayout(ctx).apply {
++                orientation = LinearLayout.HORIZONTAL
++                keys.forEach { addView(it) }
++            })
++        }
++
++        fun currentQuery() = binding.mainSearch.query.toString()
++
++        addRow(
++            makeKey("Space", 14f) { binding.mainSearch.setQuery(currentQuery() + " ", false) },
++            makeKey("Delete", 14f) { binding.mainSearch.setQuery(currentQuery().dropLast(1), false) },
++            makeKey("Search", 14f) { binding.mainSearch.setQuery(currentQuery(), true) },
++        )
++
++        var sideKey: TextView? = null
++        var firstKey: TextView? = null
++        for (rowChars in listOf("abcdef", "ghijkl", "mnopqr", "stuvwx", "yz1234", "567890")) {
++            val keys = rowChars.map { ch ->
++                makeKey(ch.toString(), 18f) {
++                    binding.mainSearch.setQuery(currentQuery() + ch, false)
++                }.also {
++                    if (ch == 'a') firstKey = it
++                    if (ch == 'l') sideKey = it
++                }
++            }
++            addRow(*keys.toTypedArray())
++        }
++
++        // Moving left from the banners goes to the keyboard instead of the navigation rail
++        sideKey?.let {
++            results.nextFocusLeftId = it.id
++            history.nextFocusLeftId = it.id
++        }
++
++        val body = LinearLayout(ctx).apply {
++            orientation = LinearLayout.HORIZONTAL
++            layoutParams = LinearLayout.LayoutParams(matchParent, matchParent).apply {
++                marginStart = startMargin
++            }
++            addView(keyboard)
++            addView(rightPane)
++        }
++        parent.addView(body, index)
++
++        // No system keyboard popping up on top of ours
++        activity?.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
++        binding.searchRoot.findViewById<TextView>(androidx.appcompat.R.id.search_src_text)
++            ?.setShowSoftInputOnFocus(false)
++
++        body.post { firstKey?.requestFocus() }
++    }
++
+     override fun fixLayout(view: View) {
+         fixSystemBarsPadding(
+             view,
+@@ -228,7 +423,8 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
+ 
+         // Fix grid
+         currentSpan = view.context.getSpanCount()
+-        binding?.searchAutofitResults?.spanCount = currentSpan
++        binding?.searchAutofitResults?.spanCount =
++            if (bannerProvider != null) view.context.getSpanCount(isHorizontal = true) else currentSpan
+         HomeFragment.configEvent.invoke()
+     }
+ 
+@@ -238,9 +434,12 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
+     ) {
+         reloadRepos()
+         binding.apply {
++            val isBanner = bannerProvider != null
+             val adapter =
+                 SearchAdapter(
+                     searchAutofitResults,
++                    isHorizontal = isBanner,
++                    forceTitle = isBanner,
+                 ) { callback ->
+                     SearchHelper.handleSearchClickCallback(callback)
+                 }
+@@ -252,6 +451,12 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
+             searchLoadingBar.alpha = 0f
+         }
+ 
++        if (bannerProvider != null) {
++            // Provider filter chips make no sense when only one provider is searched
++            binding.tvtypesChipsScroll.root.isVisible = false
++            if (isLayout(TV or EMULATOR)) setupTvKeyboard(binding)
++        }
++
+         binding.voiceSearch.setOnClickListener { searchView ->
+             searchView?.context?.let { ctx ->
+                 try {
+@@ -284,6 +489,10 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
+         selectedApis = DataStoreHelper.searchPreferenceProviders.toMutableSet()
+ 
+         binding.searchFilter.setOnClickListener { searchView ->
++            if (bannerProvider != null) {
++                pickBannerProvider(binding)
++                return@setOnClickListener
++            }
+             searchView?.context?.let { ctx ->
+                 val validAPIs = ctx.filterProviderByPreferredMedia(hasHomePageIsRequired = false)
+                 var currentValidApis = listOf<MainAPI>()
+@@ -449,16 +658,22 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
+                     searchViewModel.clearSuggestions()
+                 } else {
+                     // Fetch suggestions when user is typing (if enabled)
+-                    if (isSearchSuggestionsEnabled) {
++                    if (isSearchSuggestionsEnabled && !keyboardMode) {
+                         searchViewModel.fetchSuggestions(newText)
+                     }
++                    // The on-screen keyboard searches while you type
++                    if (keyboardMode) scheduleLiveSearch(newText)
+                 }
++                val isBanner = bannerProvider != null
+                 binding.apply {
+                     searchHistoryRecycler.isVisible = showHistory
+-                    searchMasterRecycler.isVisible = !showHistory && isAdvancedSearch
+-                    searchAutofitResults.isVisible = !showHistory && !isAdvancedSearch
++                    searchMasterRecycler.isVisible =
++                        !showHistory && isAdvancedSearch && !isBanner
++                    searchAutofitResults.isVisible =
++                        !showHistory && (!isAdvancedSearch || isBanner)
+                     // Hide suggestions when showing history or showing search results
+-                    searchSuggestionsRecycler.isVisible = !showHistory && isSearchSuggestionsEnabled
++                    searchSuggestionsRecycler.isVisible =
++                        !showHistory && isSearchSuggestionsEnabled && !keyboardMode
+                 }
+ 
+                 return true
+@@ -470,7 +685,7 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
+                 is Resource.Success -> {
+                     it.value.let { data ->
+                         val list = data.list
+-                        if (list.isNotEmpty()) {
++                        if (list.isNotEmpty() || bannerProvider != null) {
+                             (binding.searchAutofitResults.adapter as? SearchAdapter)?.submitList(
+                                 list
+                             )
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchResultBuilder.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchResultBuilder.kt
+index fd99b8d..f0900d8 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchResultBuilder.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchResultBuilder.kt
+@@ -19,6 +19,8 @@ import com.lagradost.cloudstream3.SearchQuality
+ import com.lagradost.cloudstream3.SearchResponse
+ import com.lagradost.cloudstream3.isMovieType
+ import com.lagradost.cloudstream3.syncproviders.SyncAPI
++import com.lagradost.cloudstream3.ui.UiPrefs
++import com.lagradost.cloudstream3.ui.settings.Globals.EMULATOR
+ import com.lagradost.cloudstream3.ui.settings.Globals.TV
+ import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
+ import com.lagradost.cloudstream3.utils.AppContextUtils.getNameFull
+@@ -50,7 +52,8 @@ object SearchResultBuilder {
+         itemView: View,
+         nextFocusUp: Int? = null,
+         nextFocusDown: Int? = null,
+-        colorCallback: ((Palette) -> Unit)? = null
++        colorCallback: ((Palette) -> Unit)? = null,
++        forceTitle: Boolean = false
+     ) {
+         val cardView: ImageView = itemView.findViewById(R.id.imageView)
+         val cardText: TextView? = itemView.findViewById(R.id.imageText)
+@@ -102,7 +105,7 @@ object SearchResultBuilder {
+             }
+         }
+ 
+-        shadow?.isVisible = showTitle
++        shadow?.isVisible = showTitle || forceTitle
+ 
+         when (card.quality) {
+             SearchQuality.BlueRay -> R.string.quality_blueray
+@@ -130,7 +133,7 @@ object SearchResultBuilder {
+         }
+ 
+         cardText?.text = card.name
+-        cardText?.isVisible = showTitle
++        cardText?.isVisible = showTitle || forceTitle
+         cardView.isVisible = true
+         if (!card.posterUrl.isNullOrEmpty()) {
+             cardView.loadImage(card.posterUrl, card.posterHeaders) {
+@@ -238,6 +241,7 @@ object SearchResultBuilder {
+         }*/
+ 
+         itemView.setOnFocusChangeListener { view, b ->
++            if (isLayout(TV or EMULATOR)) UiPrefs.applyCardFocus(view, b)
+             focus(view, b)
+         }
+ 
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchViewModel.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchViewModel.kt
+index f60588e..59c739d 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchViewModel.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchViewModel.kt
+@@ -76,10 +76,12 @@ class SearchViewModel : ViewModel() {
+         providersActive: Set<String> = setOf(),
+         ignoreSettings: Boolean = false,
+         isQuickSearch: Boolean = false,
++        saveToHistory: Boolean = true,
+     ) {
+         currentSearchIndex++
+         onGoingSearch?.cancel()
+-        onGoingSearch = search(query, providersActive, ignoreSettings, isQuickSearch)
++        onGoingSearch =
++            search(query, providersActive, ignoreSettings, isQuickSearch, saveToHistory)
+     }
+ 
+     fun updateHistory() = ioSafe {
+@@ -200,6 +202,7 @@ class SearchViewModel : ViewModel() {
+         providersActive: Set<String>,
+         ignoreSettings: Boolean = false,
+         isQuickSearch: Boolean = false,
++        saveToHistory: Boolean = true,
+     ) =
+         viewModelScope.launchSafe {
+             val currentIndex = currentSearchIndex
+@@ -208,7 +211,7 @@ class SearchViewModel : ViewModel() {
+                 return@launchSafe
+             }
+ 
+-            if (!isQuickSearch) {
++            if (!isQuickSearch && saveToHistory) {
+                 val key = query.hashCode().toString()
+                 setKey(
+                     "$currentAccount/$SEARCH_HISTORY_KEY",
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/settings/SettingsUI.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/settings/SettingsUI.kt
+index fdf2cb4..371b780 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/ui/settings/SettingsUI.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/settings/SettingsUI.kt
+@@ -12,6 +12,7 @@ import com.lagradost.cloudstream3.R
+ import com.lagradost.cloudstream3.SearchQuality
+ import com.lagradost.cloudstream3.mvvm.logError
+ import com.lagradost.cloudstream3.ui.BasePreferenceFragmentCompat
++import com.lagradost.cloudstream3.ui.UiPrefs
+ import com.lagradost.cloudstream3.ui.clear
+ import com.lagradost.cloudstream3.ui.home.HomeChildItemAdapter
+ import com.lagradost.cloudstream3.ui.home.ParentItemAdapter
+@@ -25,6 +26,7 @@ import com.lagradost.cloudstream3.ui.settings.SettingsFragment.Companion.hideOn
+ import com.lagradost.cloudstream3.ui.settings.SettingsFragment.Companion.setPaddingBottom
+ import com.lagradost.cloudstream3.ui.settings.SettingsFragment.Companion.setToolBarScrollFlags
+ import com.lagradost.cloudstream3.ui.settings.SettingsFragment.Companion.setUpToolbar
++import com.lagradost.cloudstream3.utils.AppContextUtils.filterProviderByPreferredMedia
+ import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showBottomDialog
+ import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showDialog
+ import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showMultiDialog
+@@ -121,6 +123,116 @@ class SettingsUI : BasePreferenceFragmentCompat() {
+             return@setOnPreferenceClickListener true
+         }
+ 
++        // Options below are saved per profile, see UiPrefs
++        val offText = getString(R.string.ui_search_provider_off)
++        val homeStyleNames = listOf(
++            getString(R.string.ui_home_style_classic),
++            getString(R.string.ui_home_style_cinematic)
++        )
++        val homeStyleValues = listOf(UiPrefs.HOME_CLASSIC, UiPrefs.HOME_CINEMATIC)
++        val focusNames = listOf(
++            getString(R.string.ui_focus_lift),
++            getString(R.string.ui_focus_border)
++        )
++        val focusValues = listOf(UiPrefs.FOCUS_LIFT, UiPrefs.FOCUS_BORDER)
++        val onOffNames = listOf(
++            getString(R.string.ui_switcher_on),
++            getString(R.string.ui_switcher_off)
++        )
++        val onOffValues = listOf("on", "off")
++
++        fun refreshProfileSummaries() {
++            getPref(R.string.ui_search_provider_key)?.summary = UiPrefs.searchProvider ?: offText
++            getPref(R.string.ui_home_style_key)?.summary =
++                homeStyleNames[homeStyleValues.indexOf(
++                    UiPrefs.getOpt(UiPrefs.HOME_STYLE, UiPrefs.HOME_CLASSIC)
++                ).coerceAtLeast(0)]
++            getPref(R.string.ui_home_tiles_key)?.summary =
++                onOffNames[onOffValues.indexOf(
++                    UiPrefs.getOpt(UiPrefs.HOME_TILES, "on")
++                ).coerceAtLeast(0)]
++            getPref(R.string.ui_focus_style_key)?.summary =
++                focusNames[focusValues.indexOf(
++                    UiPrefs.getOpt(UiPrefs.FOCUS_STYLE, UiPrefs.FOCUS_LIFT)
++                ).coerceAtLeast(0)]
++            getPref(R.string.ui_provider_switcher_key)?.summary =
++                onOffNames[onOffValues.indexOf(
++                    UiPrefs.getOpt(UiPrefs.PROVIDER_SWITCHER, "on")
++                ).coerceAtLeast(0)]
++        }
++        refreshProfileSummaries()
++
++        fun pickProfileOption(
++            title: Int,
++            names: List<String>,
++            values: List<String>,
++            current: String,
++            onPick: (String) -> Unit
++        ) {
++            activity?.showBottomDialog(
++                names,
++                values.indexOf(current).coerceAtLeast(0),
++                getString(title),
++                true,
++                {}
++            ) {
++                onPick(values[it])
++                refreshProfileSummaries()
++            }
++        }
++
++        getPref(R.string.ui_search_provider_key)?.setOnPreferenceClickListener {
++            val providers = (context?.filterProviderByPreferredMedia(hasHomePageIsRequired = false)
++                ?: emptyList()).map { it.name }.distinct().sortedBy { it.lowercase() }
++            pickProfileOption(
++                R.string.ui_search_provider_settings,
++                listOf(offText) + providers,
++                listOf("") + providers,
++                UiPrefs.searchProvider ?: ""
++            ) { UiPrefs.searchProvider = it.ifBlank { null } }
++            return@setOnPreferenceClickListener true
++        }
++
++        getPref(R.string.ui_home_style_key)?.setOnPreferenceClickListener {
++            pickProfileOption(
++                R.string.ui_home_style_settings,
++                homeStyleNames,
++                homeStyleValues,
++                UiPrefs.getOpt(UiPrefs.HOME_STYLE, UiPrefs.HOME_CLASSIC)
++            ) { UiPrefs.putOpt(UiPrefs.HOME_STYLE, it) }
++            return@setOnPreferenceClickListener true
++        }
++
++        getPref(R.string.ui_home_tiles_key)?.setOnPreferenceClickListener {
++            pickProfileOption(
++                R.string.ui_home_tiles_settings,
++                onOffNames,
++                onOffValues,
++                UiPrefs.getOpt(UiPrefs.HOME_TILES, "on")
++            ) { UiPrefs.putOpt(UiPrefs.HOME_TILES, it) }
++            return@setOnPreferenceClickListener true
++        }
++
++        getPref(R.string.ui_focus_style_key)?.setOnPreferenceClickListener {
++            pickProfileOption(
++                R.string.ui_focus_style_settings,
++                focusNames,
++                focusValues,
++                UiPrefs.getOpt(UiPrefs.FOCUS_STYLE, UiPrefs.FOCUS_LIFT)
++            ) { UiPrefs.putOpt(UiPrefs.FOCUS_STYLE, it) }
++            return@setOnPreferenceClickListener true
++        }
++
++        getPref(R.string.ui_provider_switcher_key)?.setOnPreferenceClickListener {
++            pickProfileOption(
++                R.string.ui_provider_switcher_settings,
++                onOffNames,
++                onOffValues,
++                UiPrefs.getOpt(UiPrefs.PROVIDER_SWITCHER, "on")
++            ) { UiPrefs.putOpt(UiPrefs.PROVIDER_SWITCHER, it) }
++            return@setOnPreferenceClickListener true
++        }
++
+         getPref(R.string.nav_labels_key)?.setOnPreferenceClickListener {
+             val names = listOf(
+                 getString(R.string.nav_label_selected),
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/utils/InAppUpdater.kt b/app/src/main/java/com/lagradost/cloudstream3/utils/InAppUpdater.kt
+index f4d6b42..18ace57 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/utils/InAppUpdater.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/utils/InAppUpdater.kt
+@@ -38,8 +38,8 @@ import java.io.IOException
+ import java.io.InputStreamReader
+ 
+ object InAppUpdater {
+-    private const val GITHUB_USER_NAME = "recloudstream"
+-    private const val GITHUB_REPO = "cloudstream"
++    private val GITHUB_USER_NAME = BuildConfig.UPDATE_REPO_OWNER
++    private val GITHUB_REPO = BuildConfig.UPDATE_REPO_NAME
+ 
+     private const val PRERELEASE_PACKAGE_NAME = "com.lagradost.cloudstream3.prerelease"
+     private const val LOG_TAG = "InAppUpdater"
+diff --git a/app/src/main/res/drawable/card_focus_outline.xml b/app/src/main/res/drawable/card_focus_outline.xml
+new file mode 100644
+index 0000000..ecce2a3
+--- /dev/null
++++ b/app/src/main/res/drawable/card_focus_outline.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<shape xmlns:android="http://schemas.android.com/apk/res/android">
++    <stroke
++        android:width="3dp"
++        android:color="?attr/colorPrimary" />
++    <corners android:radius="@dimen/rounded_image_radius" />
++</shape>
+diff --git a/app/src/main/res/drawable/outline_drawable.xml b/app/src/main/res/drawable/outline_drawable.xml
+index 16eba83..fddd7b2 100644
+--- a/app/src/main/res/drawable/outline_drawable.xml
++++ b/app/src/main/res/drawable/outline_drawable.xml
+@@ -1,5 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <selector xmlns:android="http://schemas.android.com/apk/res/android">
+     <item android:state_focused="true"
+-          android:drawable="@drawable/outline"/> <!-- focused -->
+-</selector>
+\ No newline at end of file
++          android:drawable="@drawable/card_focus_outline"/> <!-- focused -->
++</selector>
+diff --git a/app/src/main/res/layout/browse_chip.xml b/app/src/main/res/layout/browse_chip.xml
+new file mode 100644
+index 0000000..2d344b4
+--- /dev/null
++++ b/app/src/main/res/layout/browse_chip.xml
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="utf-8"?>
++<com.google.android.material.chip.Chip xmlns:android="http://schemas.android.com/apk/res/android"
++    style="@style/ChipFilled"
++    android:layout_width="wrap_content"
++    android:layout_height="wrap_content"
++    android:checkable="true" />
+diff --git a/app/src/main/res/layout/browse_sheet.xml b/app/src/main/res/layout/browse_sheet.xml
+new file mode 100644
+index 0000000..a59f151
+--- /dev/null
++++ b/app/src/main/res/layout/browse_sheet.xml
+@@ -0,0 +1,80 @@
++<?xml version="1.0" encoding="utf-8"?>
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:background="?attr/primaryBlackBackground"
++    android:orientation="vertical"
++    android:paddingTop="16dp">
++
++    <TextView
++        android:id="@+id/browse_title"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:paddingHorizontal="16dp"
++        android:text="@string/browse_title"
++        android:textColor="?attr/textColor"
++        android:textSize="22sp"
++        android:textStyle="bold" />
++
++    <TextView
++        android:id="@+id/browse_subtitle"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:paddingHorizontal="16dp"
++        android:paddingBottom="8dp"
++        android:textColor="?attr/grayTextColor"
++        android:textSize="13sp" />
++
++    <HorizontalScrollView
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:scrollbars="none">
++
++        <com.google.android.material.chip.ChipGroup
++            android:id="@+id/browse_category_group"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:paddingHorizontal="12dp"
++            app:selectionRequired="true"
++            app:singleLine="true"
++            app:singleSelection="true" />
++    </HorizontalScrollView>
++
++    <HorizontalScrollView
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:scrollbars="none">
++
++        <com.google.android.material.chip.ChipGroup
++            android:id="@+id/browse_sort_group"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:paddingHorizontal="12dp"
++            app:selectionRequired="true"
++            app:singleLine="true"
++            app:singleSelection="true" />
++    </HorizontalScrollView>
++
++    <TextView
++        android:id="@+id/browse_empty"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:gravity="center"
++        android:padding="32dp"
++        android:text="@string/browse_empty"
++        android:textColor="?attr/grayTextColor"
++        android:visibility="gone" />
++
++    <com.lagradost.cloudstream3.ui.AutofitRecyclerView
++        android:id="@+id/browse_results"
++        android:layout_width="match_parent"
++        android:layout_height="0dp"
++        android:layout_weight="1"
++        android:clipToPadding="false"
++        android:descendantFocusability="afterDescendants"
++        android:orientation="vertical"
++        android:paddingHorizontal="8dp"
++        android:paddingTop="8dp"
++        app:spanCount="3" />
++</LinearLayout>
+diff --git a/app/src/main/res/layout/fragment_home_head.xml b/app/src/main/res/layout/fragment_home_head.xml
+index b62173e..c80c855 100644
+--- a/app/src/main/res/layout/fragment_home_head.xml
++++ b/app/src/main/res/layout/fragment_home_head.xml
+@@ -198,6 +198,13 @@
+     </LinearLayout>
+ 
+ 
++    <LinearLayout
++        android:id="@+id/home_browse_holder"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:orientation="vertical"
++        android:visibility="gone" />
++
+     <LinearLayout
+         android:id="@+id/home_watch_holder"
+         android:layout_width="match_parent"
+diff --git a/app/src/main/res/layout/fragment_home_head_tv.xml b/app/src/main/res/layout/fragment_home_head_tv.xml
+index c06de13..afebcd3 100644
+--- a/app/src/main/res/layout/fragment_home_head_tv.xml
++++ b/app/src/main/res/layout/fragment_home_head_tv.xml
+@@ -312,6 +312,14 @@
+              android:nextFocusDown="@id/home_watch_child_recyclerview" />
+      </FrameLayout>-->
+ 
++    <LinearLayout
++        android:id="@+id/home_browse_holder"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:layout_marginStart="@dimen/navbar_width"
++        android:orientation="vertical"
++        android:visibility="gone" />
++
+     <LinearLayout
+         android:id="@+id/home_watch_holder"
+         android:layout_width="match_parent"
+diff --git a/app/src/main/res/values/donottranslate-strings.xml b/app/src/main/res/values/donottranslate-strings.xml
+index 586ff10..f704ee6 100644
+--- a/app/src/main/res/values/donottranslate-strings.xml
++++ b/app/src/main/res/values/donottranslate-strings.xml
+@@ -67,6 +67,11 @@
+     <string name="bottom_title_key">bottom_title_key</string>
+     <string name="nav_labels_key">nav_labels_key</string>
+     <string name="start_tab_key">start_tab_key</string>
++    <string name="ui_search_provider_key">ui_search_provider_key</string>
++    <string name="ui_home_style_key">ui_home_style_key</string>
++    <string name="ui_home_tiles_key">ui_home_tiles_key</string>
++    <string name="ui_focus_style_key">ui_focus_style_key</string>
++    <string name="ui_provider_switcher_key">ui_provider_switcher_key</string>
+     <string name="poster_ui_key">poster_ui_key</string>
+     <string name="overscan_key">overscan_key</string>
+     <string name="poster_size_key">poster_size_key</string>
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index e1cdb12..c653eac 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -405,6 +405,26 @@
+     <string name="nav_label_selected">Selected tab only</string>
+     <string name="nav_label_always">Always show</string>
+     <string name="nav_label_hidden">Icons only</string>
++    <string name="pref_category_profile_layout">Profile layout (saved per profile)</string>
++    <string name="ui_search_provider_settings">Single-provider search</string>
++    <string name="ui_search_provider_off">Off (search all selected providers)</string>
++    <string name="ui_home_style_settings">Home style</string>
++    <string name="ui_home_style_classic">Classic</string>
++    <string name="ui_home_style_cinematic">Cinematic (rounded hero, tile filters)</string>
++    <string name="ui_focus_style_settings">Card focus style (TV and emulator)</string>
++    <string name="ui_focus_lift">Lift and outline</string>
++    <string name="ui_focus_border">Outline only</string>
++    <string name="ui_provider_switcher_settings">Provider switcher</string>
++    <string name="ui_switcher_on">On</string>
++    <string name="ui_switcher_off">Off</string>
++    <string name="ui_switch_provider_title">Watch on another provider</string>
++    <string name="ui_switch_provider_searching">Looking for other providers…</string>
++    <string name="ui_home_tiles_settings">Home browse tiles</string>
++    <string name="browse_title">Browse</string>
++    <string name="browse_all_sort">Browse all and sort</string>
++    <string name="browse_sort_default">Default order</string>
++    <string name="browse_empty">Nothing in this category yet</string>
++    <string name="browse_from">From %s</string>
+     <!-- account stuff -->
+     <string name="example_password">password123</string>
+     <string name="example_username">Username</string>
+diff --git a/app/src/main/res/xml/settings_ui.xml b/app/src/main/res/xml/settings_ui.xml
+index 7e5f33a..52bdfb4 100644
+--- a/app/src/main/res/xml/settings_ui.xml
++++ b/app/src/main/res/xml/settings_ui.xml
+@@ -2,6 +2,29 @@
+ <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:app="http://schemas.android.com/apk/res-auto">
+ 
++    <PreferenceCategory android:title="@string/pref_category_profile_layout">
++        <Preference
++            android:icon="@drawable/search_icon"
++            android:key="@string/ui_search_provider_key"
++            android:title="@string/ui_search_provider_settings" />
++        <Preference
++            android:icon="@drawable/ic_baseline_color_lens_24"
++            android:key="@string/ui_home_style_key"
++            android:title="@string/ui_home_style_settings" />
++        <Preference
++            android:icon="@drawable/ic_baseline_tv_24"
++            android:key="@string/ui_home_tiles_key"
++            android:title="@string/ui_home_tiles_settings" />
++        <Preference
++            android:icon="@drawable/ic_baseline_tv_24"
++            android:key="@string/ui_focus_style_key"
++            android:title="@string/ui_focus_style_settings" />
++        <Preference
++            android:icon="@drawable/ic_baseline_tune_24"
++            android:key="@string/ui_provider_switcher_key"
++            android:title="@string/ui_provider_switcher_settings" />
++    </PreferenceCategory>
++
+     <PreferenceCategory android:title="@string/pref_category_looks">
+         <Preference
+             android:icon="@drawable/ic_baseline_color_lens_24"

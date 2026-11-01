@@ -33,6 +33,8 @@ class SearchClickCallback(
 class SearchAdapter(
     private val resView: AutofitRecyclerView,
     private val isHorizontal:Boolean = false,
+    /** Always show the title on the card, used by the banner search layout */
+    private val forceTitle: Boolean = false,
     private val clickCallback: (SearchClickCallback) -> Unit,
 ) : NoStateAdapter<SearchResponse>(diffCallback = BaseDiffCallback(itemSame = { a, b ->
     if (a.id != null || b.id != null) {
@@ -94,6 +96,9 @@ class SearchAdapter(
                 imageView.layoutParams = params
             }
         }
-        SearchResultBuilder.bind(clickCallback, item, position, holder.view.root)
+        SearchResultBuilder.bind(
+            clickCallback, item, position, holder.view.root,
+            forceTitle = forceTitle
+        )
     }
 }

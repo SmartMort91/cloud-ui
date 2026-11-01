@@ -12,6 +12,7 @@ import com.lagradost.cloudstream3.R
 import com.lagradost.cloudstream3.SearchQuality
 import com.lagradost.cloudstream3.mvvm.logError
 import com.lagradost.cloudstream3.ui.BasePreferenceFragmentCompat
+import com.lagradost.cloudstream3.ui.UiPrefs
 import com.lagradost.cloudstream3.ui.clear
 import com.lagradost.cloudstream3.ui.home.HomeChildItemAdapter
 import com.lagradost.cloudstream3.ui.home.ParentItemAdapter
@@ -25,6 +26,7 @@ import com.lagradost.cloudstream3.ui.settings.SettingsFragment.Companion.hideOn
 import com.lagradost.cloudstream3.ui.settings.SettingsFragment.Companion.setPaddingBottom
 import com.lagradost.cloudstream3.ui.settings.SettingsFragment.Companion.setToolBarScrollFlags
 import com.lagradost.cloudstream3.ui.settings.SettingsFragment.Companion.setUpToolbar
+import com.lagradost.cloudstream3.utils.AppContextUtils.filterProviderByPreferredMedia
 import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showBottomDialog
 import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showDialog
 import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showMultiDialog
@@ -118,6 +120,116 @@ class SettingsUI : BasePreferenceFragmentCompat() {
                     }
                 }
             )
+            return@setOnPreferenceClickListener true
+        }
+
+        // Options below are saved per profile, see UiPrefs
+        val offText = getString(R.string.ui_search_provider_off)
+        val homeStyleNames = listOf(
+            getString(R.string.ui_home_style_classic),
+            getString(R.string.ui_home_style_cinematic)
+        )
+        val homeStyleValues = listOf(UiPrefs.HOME_CLASSIC, UiPrefs.HOME_CINEMATIC)
+        val focusNames = listOf(
+            getString(R.string.ui_focus_lift),
+            getString(R.string.ui_focus_border)
+        )
+        val focusValues = listOf(UiPrefs.FOCUS_LIFT, UiPrefs.FOCUS_BORDER)
+        val onOffNames = listOf(
+            getString(R.string.ui_switcher_on),
+            getString(R.string.ui_switcher_off)
+        )
+        val onOffValues = listOf("on", "off")
+
+        fun refreshProfileSummaries() {
+            getPref(R.string.ui_search_provider_key)?.summary = UiPrefs.searchProvider ?: offText
+            getPref(R.string.ui_home_style_key)?.summary =
+                homeStyleNames[homeStyleValues.indexOf(
+                    UiPrefs.getOpt(UiPrefs.HOME_STYLE, UiPrefs.HOME_CLASSIC)
+                ).coerceAtLeast(0)]
+            getPref(R.string.ui_home_tiles_key)?.summary =
+                onOffNames[onOffValues.indexOf(
+                    UiPrefs.getOpt(UiPrefs.HOME_TILES, "on")
+                ).coerceAtLeast(0)]
+            getPref(R.string.ui_focus_style_key)?.summary =
+                focusNames[focusValues.indexOf(
+                    UiPrefs.getOpt(UiPrefs.FOCUS_STYLE, UiPrefs.FOCUS_LIFT)
+                ).coerceAtLeast(0)]
+            getPref(R.string.ui_provider_switcher_key)?.summary =
+                onOffNames[onOffValues.indexOf(
+                    UiPrefs.getOpt(UiPrefs.PROVIDER_SWITCHER, "on")
+                ).coerceAtLeast(0)]
+        }
+        refreshProfileSummaries()
+
+        fun pickProfileOption(
+            title: Int,
+            names: List<String>,
+            values: List<String>,
+            current: String,
+            onPick: (String) -> Unit
+        ) {
+            activity?.showBottomDialog(
+                names,
+                values.indexOf(current).coerceAtLeast(0),
+                getString(title),
+                true,
+                {}
+            ) {
+                onPick(values[it])
+                refreshProfileSummaries()
+            }
+        }
+
+        getPref(R.string.ui_search_provider_key)?.setOnPreferenceClickListener {
+            val providers = (context?.filterProviderByPreferredMedia(hasHomePageIsRequired = false)
+                ?: emptyList()).map { it.name }.distinct().sortedBy { it.lowercase() }
+            pickProfileOption(
+                R.string.ui_search_provider_settings,
+                listOf(offText) + providers,
+                listOf("") + providers,
+                UiPrefs.searchProvider ?: ""
+            ) { UiPrefs.searchProvider = it.ifBlank { null } }
+            return@setOnPreferenceClickListener true
+        }
+
+        getPref(R.string.ui_home_style_key)?.setOnPreferenceClickListener {
+            pickProfileOption(
+                R.string.ui_home_style_settings,
+                homeStyleNames,
+                homeStyleValues,
+                UiPrefs.getOpt(UiPrefs.HOME_STYLE, UiPrefs.HOME_CLASSIC)
+            ) { UiPrefs.putOpt(UiPrefs.HOME_STYLE, it) }
+            return@setOnPreferenceClickListener true
+        }
+
+        getPref(R.string.ui_home_tiles_key)?.setOnPreferenceClickListener {
+            pickProfileOption(
+                R.string.ui_home_tiles_settings,
+                onOffNames,
+                onOffValues,
+                UiPrefs.getOpt(UiPrefs.HOME_TILES, "on")
+            ) { UiPrefs.putOpt(UiPrefs.HOME_TILES, it) }
+            return@setOnPreferenceClickListener true
+        }
+
+        getPref(R.string.ui_focus_style_key)?.setOnPreferenceClickListener {
+            pickProfileOption(
+                R.string.ui_focus_style_settings,
+                focusNames,
+                focusValues,
+                UiPrefs.getOpt(UiPrefs.FOCUS_STYLE, UiPrefs.FOCUS_LIFT)
+            ) { UiPrefs.putOpt(UiPrefs.FOCUS_STYLE, it) }
+            return@setOnPreferenceClickListener true
+        }
+
+        getPref(R.string.ui_provider_switcher_key)?.setOnPreferenceClickListener {
+            pickProfileOption(
+                R.string.ui_provider_switcher_settings,
+                onOffNames,
+                onOffValues,
+                UiPrefs.getOpt(UiPrefs.PROVIDER_SWITCHER, "on")
+            ) { UiPrefs.putOpt(UiPrefs.PROVIDER_SWITCHER, it) }
             return@setOnPreferenceClickListener true
         }
 

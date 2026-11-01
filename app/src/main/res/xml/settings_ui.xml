@@ -2,6 +2,29 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <PreferenceCategory android:title="@string/pref_category_profile_layout">
+        <Preference
+            android:icon="@drawable/search_icon"
+            android:key="@string/ui_search_provider_key"
+            android:title="@string/ui_search_provider_settings" />
+        <Preference
+            android:icon="@drawable/ic_baseline_color_lens_24"
+            android:key="@string/ui_home_style_key"
+            android:title="@string/ui_home_style_settings" />
+        <Preference
+            android:icon="@drawable/ic_baseline_tv_24"
+            android:key="@string/ui_home_tiles_key"
+            android:title="@string/ui_home_tiles_settings" />
+        <Preference
+            android:icon="@drawable/ic_baseline_tv_24"
+            android:key="@string/ui_focus_style_key"
+            android:title="@string/ui_focus_style_settings" />
+        <Preference
+            android:icon="@drawable/ic_baseline_tune_24"
+            android:key="@string/ui_provider_switcher_key"
+            android:title="@string/ui_provider_switcher_settings" />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/pref_category_looks">
         <Preference
             android:icon="@drawable/ic_baseline_color_lens_24"

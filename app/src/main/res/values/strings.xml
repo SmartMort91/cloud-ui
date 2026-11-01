@@ -405,6 +405,26 @@
     <string name="nav_label_selected">Selected tab only</string>
     <string name="nav_label_always">Always show</string>
     <string name="nav_label_hidden">Icons only</string>
+    <string name="pref_category_profile_layout">Profile layout (saved per profile)</string>
+    <string name="ui_search_provider_settings">Single-provider search</string>
+    <string name="ui_search_provider_off">Off (search all selected providers)</string>
+    <string name="ui_home_style_settings">Home style</string>
+    <string name="ui_home_style_classic">Classic</string>
+    <string name="ui_home_style_cinematic">Cinematic (rounded hero, tile filters)</string>
+    <string name="ui_focus_style_settings">Card focus style (TV and emulator)</string>
+    <string name="ui_focus_lift">Lift and outline</string>
+    <string name="ui_focus_border">Outline only</string>
+    <string name="ui_provider_switcher_settings">Provider switcher</string>
+    <string name="ui_switcher_on">On</string>
+    <string name="ui_switcher_off">Off</string>
+    <string name="ui_switch_provider_title">Watch on another provider</string>
+    <string name="ui_switch_provider_searching">Looking for other providers…</string>
+    <string name="ui_home_tiles_settings">Home browse tiles</string>
+    <string name="browse_title">Browse</string>
+    <string name="browse_all_sort">Browse all and sort</string>
+    <string name="browse_sort_default">Default order</string>
+    <string name="browse_empty">Nothing in this category yet</string>
+    <string name="browse_from">From %s</string>
     <!-- account stuff -->
     <string name="example_password">password123</string>
     <string name="example_username">Username</string>
