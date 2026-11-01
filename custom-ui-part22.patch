@@ -1,0 +1,66 @@
+diff --git a/.github/workflows/custom_release.yml b/.github/workflows/custom_release.yml
+index ace502b..0b0fc51 100644
+--- a/.github/workflows/custom_release.yml
++++ b/.github/workflows/custom_release.yml
+@@ -140,7 +140,7 @@ jobs:
+           gh release delete pre-release --cleanup-tag --yes || true
+           gh release create pre-release app/build/outputs/apk/prerelease/release/*.apk \
+             --target "$SHA" \
+-            --prerelease \
++            --latest \
+             --title "Custom build" \
+             --notes "Built from commit $SHA. Install the APK. Installed copies update themselves from new releases here."
+ 
+diff --git a/app/build.gradle.kts b/app/build.gradle.kts
+index 1e45f84..571241c 100644
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -190,7 +190,7 @@ android {
+             } else {
+                 logger.warn("No prerelease signing config!")
+             }
+-            versionNameSuffix = "-PRE"
++            versionNameSuffix = "-custom"
+             versionCode = (System.currentTimeMillis() / 60000).toInt()
+         }
+     }
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/setup/SetupFragmentLanguage.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/setup/SetupFragmentLanguage.kt
+index 42a62ed..e4939b7 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/ui/setup/SetupFragmentLanguage.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/setup/SetupFragmentLanguage.kt
+@@ -44,7 +44,7 @@ class SetupFragmentLanguage : BaseFragment<FragmentSetupLanguageBinding>(
+                 safe {
+                     val drawable = when {
+                         BuildConfig.DEBUG -> R.drawable.cloud_2_gradient_debug
+-                        BuildConfig.FLAVOR == "prerelease" -> R.drawable.cloud_2_gradient_beta
++                        BuildConfig.FLAVOR == "prerelease" -> R.drawable.cloud_2_gradient
+                         else -> R.drawable.cloud_2_gradient
+                     }
+                     appIconImage.setImageDrawable(ContextCompat.getDrawable(ctx, drawable))
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index fea0d26..10257a2 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -211,9 +211,9 @@
+     <string name="updates_settings">Show app updates</string>
+     <string name="updates_settings_des">Automatically search for new updates after starting the app.</string>
+     <string name="redo_setup_process">Redo setup process</string>
+-    <string name="install_prerelease">Install pre-release version</string>
+-    <string name="prerelease_already_installed">Pre-release is already installed.</string>
+-    <string name="prerelease_install_failed">Failed to install pre-release.</string>
++    <string name="install_prerelease">Install latest custom build</string>
++    <string name="prerelease_already_installed">The latest build is already installed.</string>
++    <string name="prerelease_install_failed">Failed to install the latest build.</string>
+     <string name="apk_installer_settings">APK Installer</string>
+     <string name="apk_installer_settings_des">Some devices do not support the new package installer. Try the legacy option if updates do not install.</string>
+     <string name="github">Github</string>
+diff --git a/app/src/prerelease/res/values/strings.xml b/app/src/prerelease/res/values/strings.xml
+index da3b3dc..9e16c41 100644
+--- a/app/src/prerelease/res/values/strings.xml
++++ b/app/src/prerelease/res/values/strings.xml
+@@ -1,3 +1,3 @@
+ <resources>
+-    <string name="app_name">CloudStream Beta</string>
++    <string name="app_name">CloudStream Custom</string>
+ </resources>
+\ No newline at end of file

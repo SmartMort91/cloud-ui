@@ -44,7 +44,7 @@ class SetupFragmentLanguage : BaseFragment<FragmentSetupLanguageBinding>(
                 safe {
                     val drawable = when {
                         BuildConfig.DEBUG -> R.drawable.cloud_2_gradient_debug
-                        BuildConfig.FLAVOR == "prerelease" -> R.drawable.cloud_2_gradient_beta
+                        BuildConfig.FLAVOR == "prerelease" -> R.drawable.cloud_2_gradient
                         else -> R.drawable.cloud_2_gradient
                     }
                     appIconImage.setImageDrawable(ContextCompat.getDrawable(ctx, drawable))

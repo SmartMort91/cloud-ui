@@ -140,7 +140,7 @@ jobs:
           gh release delete pre-release --cleanup-tag --yes || true
           gh release create pre-release app/build/outputs/apk/prerelease/release/*.apk \
             --target "$SHA" \
-            --prerelease \
+            --latest \
             --title "Custom build" \
             --notes "Built from commit $SHA. Install the APK. Installed copies update themselves from new releases here."
 
