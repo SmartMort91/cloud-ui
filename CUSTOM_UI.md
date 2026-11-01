@@ -39,3 +39,12 @@ overlaps with a line we changed. Resolve it using the table below, then run the 
 Builds are signed with a fixed key so new versions install over old ones. The key is stored in the
 repository secrets `SIGNING_KEYSTORE_BASE64` and `SIGNING_PASSWORD`, never in the repo.
 If the key is replaced, installed apps cannot update and must be reinstalled once.
+
+## Later hooks into official files
+- `ui/settings/SettingsUIScreen.kt`: profile layout group and auto-select subtitle language
+- `utils/AppContextUtils.kt` `sortSubs`: preferred language first
+- `utils/UIHelper.kt` `populateChips`: optional tag click callback
+- `ui/home/HomeViewModel.kt`: rows posted first, hero loads in background with a timeout
+- `ui/result/ResultFragmentPhone.kt` / `ResultFragmentTv.kt`: related list, clickable tags
+- `ui/player/GeneratorPlayer.kt` `showMirrorsDialogue`: sources grouped by resolution
+- `shared/.../settings/PreferenceScreen.kt`, `PreferenceGroupHeader.kt`, `values/styles.xml` `SettingsItem`: card style for settings

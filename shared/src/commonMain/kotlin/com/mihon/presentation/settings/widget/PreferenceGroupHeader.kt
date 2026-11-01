@@ -16,13 +16,14 @@ fun PreferenceGroupHeader(title: String) {
         contentAlignment = Alignment.CenterStart,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp, top = 14.dp),
+            .padding(bottom = 10.dp, top = 18.dp),
     ) {
         Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onBackground,
+            text = title.uppercase(),
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(horizontal = PrefsHorizontalPadding),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
         )
     }
 }

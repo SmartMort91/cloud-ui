@@ -732,12 +732,16 @@
 
     <style name="SettingsItem">
         <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">50dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_marginStart">12dp</item>
+        <item name="android:layout_marginEnd">12dp</item>
+        <item name="android:layout_marginTop">6dp</item>
         <item name="android:gravity">center_vertical</item>
         <item name="android:paddingStart">20dp</item>
-        <item name="android:paddingEnd">20dp</item>
+        <item name="android:paddingEnd">16dp</item>
         <item name="android:selectAllOnFocus">true</item>
-        <item name="android:background">?attr/focusBackground</item>
+        <item name="android:background">@drawable/settings_item_bg</item>
+        <item name="android:foreground">?attr/focusBackground</item>
         <item name="android:textColor">?attr/textColor</item>
         <item name="android:textAppearance">?android:attr/textAppearanceListItemSmall</item>
         <item name="drawableEndCompat">@drawable/ic_baseline_keyboard_arrow_right_24</item>
