@@ -934,7 +934,7 @@ class ResultFragmentTv : BaseFragment<FragmentResultTvBinding>(
                         resultTvComingSoon.isVisible = d.comingSoon
 
                         populateChips(resultTag, d.tags, onTagClick = { tag ->
-                            context?.let { TagBrowse.open(it, tag, d.apiName) }
+                            context?.let { c -> TagBrowse.open(c, tag, d.apiName.asStringNull(c)) }
                         })
                         val prefs =
                             androidx.preference.PreferenceManager.getDefaultSharedPreferences(root.context)

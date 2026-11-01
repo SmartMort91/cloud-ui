@@ -1007,7 +1007,7 @@ open class ResultFragmentPhone : BaseFragment<FragmentResultSwipeBinding>(
                     }
 
                     populateChips(resultTag, d.tags, onTagClick = { tag ->
-                        context?.let { TagBrowse.open(it, tag, d.apiName) }
+                        context?.let { c -> TagBrowse.open(c, tag, d.apiName.asStringNull(c)) }
                     })
 
                     resultComingSoon.isVisible = d.comingSoon
