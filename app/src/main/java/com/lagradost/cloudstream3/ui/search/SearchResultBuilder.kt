@@ -137,6 +137,9 @@ object SearchResultBuilder {
         cardView.isVisible = true
         if (!card.posterUrl.isNullOrEmpty()) {
             cardView.loadImage(card.posterUrl, card.posterHeaders) {
+                // Banner cards get their final size from the layout a moment later, so give the
+                // loader a fixed size instead of letting it wait for the view to be measured.
+                if (forceTitle) size(720, 450)
                 error { getImageFromDrawable(itemView.context, R.drawable.default_cover) }
             }
         } else cardView.loadImage(R.drawable.default_cover)

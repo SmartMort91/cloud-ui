@@ -157,6 +157,7 @@ class SearchAdapter(
                 }
             }
         }
+        (imageView as? TopCropImageView)?.verticalBias = if (isHorizontal) 0.2f else -1f
         SearchResultBuilder.bind(
             clickCallback, item, position, holder.view.root,
             forceTitle = forceTitle
