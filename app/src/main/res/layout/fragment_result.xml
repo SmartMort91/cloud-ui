@@ -616,7 +616,7 @@
                                     <com.google.android.material.progressindicator.CircularProgressIndicator
                                         android:id="@+id/result_resume_series_progress"
                                         style="@style/ContinueWatchingCircularProgress"
-                                        app:indicatorColor="?attr/iconGrayBackground"
+                                        app:indicatorColor="?attr/onFillColor"
                                         app:trackColor="@color/skipOpTransparent"
                                         tools:progress="50" />
                                 </FrameLayout>
@@ -633,7 +633,7 @@
                                     android:maxLines="1"
                                     android:paddingStart="5dp"
                                     android:textAllCaps="false"
-                                    android:textColor="?attr/iconGrayBackground"
+                                    android:textColor="?attr/onFillColor"
                                     android:textSize="15sp"
                                     android:textStyle="bold"
                                     android:visibility="visible"
@@ -652,7 +652,7 @@
                                     android:maxLines="1"
                                     android:paddingStart="5dp"
                                     android:textAllCaps="false"
-                                    android:textColor="?attr/iconGrayBackground"
+                                    android:textColor="?attr/onFillColor"
                                     android:textSize="15sp"
                                     android:textStyle="bold"
                                     android:visibility="gone"

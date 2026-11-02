@@ -5,6 +5,9 @@
         <item name="glassWindow">?attr/primaryBlackBackground</item>
         <item name="glassDialogSurface">?attr/primaryBlackBackground</item>
         <item name="glassSheetSurface">?attr/boxItemBackground</item>
+        <item name="fillColor">?attr/textColor</item>
+        <item name="onFillColor">?attr/iconGrayBackground</item>
+        <item name="fillStroke">?attr/iconGrayBackground</item>
         <item name="android:colorEdgeEffect">?attr/textColor</item>
 
         <item name="android:navigationBarColor">?attr/primaryBlackBackground</item>
@@ -314,6 +317,9 @@
         <item name="glassWindow">@drawable/glass_backdrop</item>
         <item name="glassDialogSurface">@color/GlassDialog</item>
         <item name="glassSheetSurface">@color/GlassSheet</item>
+        <item name="fillColor">#47FFFFFF</item>
+        <item name="onFillColor">#FFFFFFFF</item>
+        <item name="fillStroke">#8CFFFFFF</item>
         <item name="primaryGrayBackground">@color/GlassPanel</item>
         <item name="primaryBlackBackground">@color/transparent</item>
         <item name="iconGrayBackground">@color/transparent</item>
@@ -594,7 +600,7 @@
         <item name="behavior_skipCollapsed">true</item>
         <item name="shapeAppearance">@null</item>
         <item name="shapeAppearanceOverlay">@null</item>
-        <item name="backgroundTint">?attr/primaryBlackBackground</item>
+        <item name="backgroundTint">?attr/glassDialogSurface</item>
         <item name="android:background">@drawable/rounded_dialog</item>
         <item name="behavior_peekHeight">512dp</item>
     </style>
@@ -820,10 +826,10 @@
     </style>
 
     <style name="WhiteButton" parent="NiceButton">
-        <item name="strokeColor">?attr/iconGrayBackground</item>
-        <item name="backgroundTint">?attr/textColor</item>
-        <item name="iconTint">?attr/iconGrayBackground</item>
-        <item name="android:textColor">?attr/iconGrayBackground</item>
+        <item name="strokeColor">?attr/fillStroke</item>
+        <item name="backgroundTint">?attr/fillColor</item>
+        <item name="iconTint">?attr/onFillColor</item>
+        <item name="android:textColor">?attr/onFillColor</item>
         <item name="rippleColor">?attr/primaryBlackBackground</item>
     </style>
     <!-- This is so shit, because android has no native way to either changing the layout (android:layout) or changing the layout_height for no reason.
