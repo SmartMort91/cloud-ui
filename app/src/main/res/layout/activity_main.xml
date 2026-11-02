@@ -86,6 +86,19 @@
                 app:customCastBackgroundColor="?attr/primaryGrayBackground"
                 tools:ignore="FragmentTagUsage" />
         </LinearLayout>
+
+        <!-- Fades the bottom of the page into the background so the nav bar floats cleanly -->
+        <View
+            android:id="@+id/nav_fade"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:background="@drawable/nav_fade"
+            android:clickable="false"
+            android:focusable="false"
+            android:importantForAccessibility="no"
+            app:layout_constraintBottom_toTopOf="@+id/cast_mini_controller_holder"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/nav_rail_view" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.compose.ui.platform.ComposeView

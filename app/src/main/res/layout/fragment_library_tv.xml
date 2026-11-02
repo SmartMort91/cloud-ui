@@ -145,7 +145,7 @@
             app:tabIndicatorHeight="30dp"
             app:tabMode="scrollable"
             app:tabRippleColor="?attr/textColor"
-            app:tabSelectedTextColor="?attr/primaryBlackBackground"
+            app:tabSelectedTextColor="?attr/onWhiteColor"
             app:tabTextAppearance="@style/TabNoCaps"
             app:tabTextColor="?attr/textColor" />
     </com.google.android.material.appbar.AppBarLayout>

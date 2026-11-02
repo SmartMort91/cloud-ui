@@ -559,6 +559,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
         binding?.apply {
             navRailView.isVisible = isNavVisible && isLandscape()
             navView.isVisible = isNavVisible && !isLandscape()
+            findViewById<View>(R.id.nav_fade)?.isVisible = isNavVisible && !isLandscape()
             navHostFragment.apply {
                 val marginPx = resources.getDimensionPixelSize(R.dimen.nav_rail_view_width)
                 layoutParams =
@@ -1746,7 +1747,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                 itemRippleColor = rippleColor
                 itemActiveIndicatorColor = rippleColor
             } else {
-                val rippleColor = ColorStateList.valueOf(getResourceColor(R.attr.textColor, 1.0f))
+                val rippleColor = ColorStateList.valueOf(getResourceColor(R.attr.fillColor, 1.0f))
                 val rippleColorTransparent =
                     ColorStateList.valueOf(getResourceColor(R.attr.textColor, 0.2f))
                 itemSpacing = 12.toPx // expandedItemSpacing does not have an attr

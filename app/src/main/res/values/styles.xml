@@ -6,6 +6,7 @@
         <item name="glassDialogSurface">?attr/primaryBlackBackground</item>
         <item name="glassSheetSurface">?attr/boxItemBackground</item>
         <item name="fillColor">?attr/textColor</item>
+        <item name="onWhiteColor">?attr/primaryBlackBackground</item>
         <item name="onFillColor">?attr/iconGrayBackground</item>
         <item name="fillStroke">?attr/iconGrayBackground</item>
         <item name="android:colorEdgeEffect">?attr/textColor</item>
@@ -318,6 +319,7 @@
         <item name="glassDialogSurface">@color/GlassDialog</item>
         <item name="glassSheetSurface">@color/GlassSheet</item>
         <item name="fillColor">#47FFFFFF</item>
+        <item name="onWhiteColor">@color/GlassDeep</item>
         <item name="onFillColor">#FFFFFFFF</item>
         <item name="fillStroke">#8CFFFFFF</item>
         <item name="primaryGrayBackground">@color/GlassPanel</item>
@@ -731,7 +733,7 @@
     </style>
 
     <style name="PopupMenu" parent="@android:style/Widget.PopupMenu">
-        <item name="android:backgroundTint">?attr/primaryBlackBackground</item>
+        <item name="android:backgroundTint">?attr/glassDialogSurface</item>
     </style>
 
     <style name="CustomPreferenceThemeOverlay" parent="@style/PreferenceThemeOverlay">
