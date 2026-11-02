@@ -45,6 +45,9 @@ class SearchAdapter(
     }
 })) {
     companion object {
+        /** width:height of a banner card, written so the height is derived from the width */
+        private const val BANNER_RATIO = "H,16:10"
+
         val sharedPool =
             newSharedPool { setMaxRecycledViews(CONTENT, 10) }
     }
@@ -105,33 +108,54 @@ class SearchAdapter(
             else -> null
         }
 
-        if (imageView != null) {
-            val params = FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                coverHeight
-            )
-            if (imageView.layoutParams.width != params.width || imageView.layoutParams.height != params.height) {
-                imageView.layoutParams = params
-            }
-        }
+        val card = holder.view.root.findViewById<View>(R.id.background_card)
+        val constraintLp =
+            card?.layoutParams as? androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
 
-        if (isHorizontal) {
-            // Banner cards: give the card itself the exact height too. The expanded layout
-            // sizes the card from a poster ratio inside a ConstraintLayout, and that was
-            // measured before the banner height applied until something forced a new layout.
-            holder.view.root.findViewById<View>(R.id.background_card)?.let { card ->
-                val lp = card.layoutParams
-                if (lp != null) {
-                    if (lp is androidx.constraintlayout.widget.ConstraintLayout.LayoutParams) {
-                        lp.dimensionRatio = null
-                    }
-                    if (lp.height != coverHeight) {
-                        lp.height = coverHeight
-                        card.layoutParams = lp
-                    }
+        if (isHorizontal && card != null && constraintLp != null) {
+            // Banner card inside a ConstraintLayout: let the layout derive the height from the
+            // real card width. This does not depend on when the grid was measured, which is
+            // what left the first banners squashed until something forced a new layout.
+            if (constraintLp.height != 0 || constraintLp.dimensionRatio != BANNER_RATIO) {
+                constraintLp.height = 0
+                constraintLp.dimensionRatio = BANNER_RATIO
+                card.layoutParams = constraintLp
+            }
+            imageView?.let {
+                val p = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                if (it.layoutParams.height != p.height || it.layoutParams.width != p.width) {
+                    it.layoutParams = p
                 }
             }
-            holder.view.root.post { holder.view.root.requestLayout() }
+        } else {
+            if (!isHorizontal && card != null && constraintLp != null &&
+                constraintLp.dimensionRatio == BANNER_RATIO
+            ) {
+                // A recycled banner card is being reused as a poster card, restore the poster shape
+                constraintLp.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                constraintLp.dimensionRatio = "1:1.5"
+                card.layoutParams = constraintLp
+            }
+            if (imageView != null) {
+                val params = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    coverHeight
+                )
+                if (imageView.layoutParams.width != params.width || imageView.layoutParams.height != params.height) {
+                    imageView.layoutParams = params
+                }
+            }
+            if (isHorizontal && card != null) {
+                // Plain (non constraint) card: give it the exact height as well
+                val lp = card.layoutParams
+                if (lp != null && lp.height != coverHeight) {
+                    lp.height = coverHeight
+                    card.layoutParams = lp
+                }
+            }
         }
         SearchResultBuilder.bind(
             clickCallback, item, position, holder.view.root,
