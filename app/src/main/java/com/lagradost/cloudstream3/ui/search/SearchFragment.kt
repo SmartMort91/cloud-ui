@@ -356,15 +356,17 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
                         intArrayOf(activeText, activeText, keyText)
                     )
                 )
-                layoutParams = LinearLayout.LayoutParams(0, 44.toPx, 1f).apply {
+                layoutParams = LinearLayout.LayoutParams(0, matchParent, 1f).apply {
                     setMargins(3.toPx, 3.toPx, 3.toPx, 3.toPx)
                 }
                 setOnClickListener { onClick() }
             }
 
         fun addRow(vararg keys: TextView) {
+            // Rows share the available height so every key fits on short screens
             keyboard.addView(LinearLayout(ctx).apply {
                 orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(matchParent, 0, 1f)
                 keys.forEach { addView(it) }
             })
         }
@@ -425,8 +427,17 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
         // Fix grid
         currentSpan = view.context.getSpanCount()
         binding?.searchAutofitResults?.spanCount =
-            if (useBannerCards(view.context)) view.context.getSpanCount(isHorizontal = true) else currentSpan
+            if (useBannerCards(view.context)) bannerSpan(view.context) else currentSpan
         HomeFragment.configEvent.invoke()
+    }
+
+    /** Number of banner columns, sized so a banner is never smaller than ~190dp wide */
+    private fun bannerSpan(context: android.content.Context): Int {
+        val dm = context.resources.displayMetrics
+        val screenDp = dm.widthPixels / dm.density
+        // the on-screen keyboard and navigation rail take a fixed part of the width
+        val paneDp = if (keyboardMode) screenDp - 320f - 90f else screenDp - 90f
+        return (paneDp / 190f).toInt().coerceIn(2, 4)
     }
 
     @Suppress("UNUSED_PARAMETER")
