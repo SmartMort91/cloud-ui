@@ -1,6 +1,7 @@
 package com.lagradost.cloudstream3.ui.search
 
 import android.view.LayoutInflater
+import com.lagradost.cloudstream3.R
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -112,6 +113,25 @@ class SearchAdapter(
             if (imageView.layoutParams.width != params.width || imageView.layoutParams.height != params.height) {
                 imageView.layoutParams = params
             }
+        }
+
+        if (isHorizontal) {
+            // Banner cards: give the card itself the exact height too. The expanded layout
+            // sizes the card from a poster ratio inside a ConstraintLayout, and that was
+            // measured before the banner height applied until something forced a new layout.
+            holder.view.root.findViewById<View>(R.id.background_card)?.let { card ->
+                val lp = card.layoutParams
+                if (lp != null) {
+                    if (lp is androidx.constraintlayout.widget.ConstraintLayout.LayoutParams) {
+                        lp.dimensionRatio = null
+                    }
+                    if (lp.height != coverHeight) {
+                        lp.height = coverHeight
+                        card.layoutParams = lp
+                    }
+                }
+            }
+            holder.view.root.post { holder.view.root.requestLayout() }
         }
         SearchResultBuilder.bind(
             clickCallback, item, position, holder.view.root,
