@@ -103,6 +103,9 @@ private fun CloudStreamColorScheme.toMaterial3ColorScheme() = if (isLight) {
     )
 }
 
+/** True when screens should let the window backdrop show through (Liquid Glass) */
+val LocalTransparentScreens = staticCompositionLocalOf { false }
+
 internal val LocalSharedInfiniteTransition = staticCompositionLocalOf<InfiniteTransition> { throw NotImplementedError() }
 
 /**
@@ -127,7 +130,10 @@ fun CloudStreamTheme(
     val csColors = modeToTheme(mode, primaryColor)
     val globalTransition = rememberInfiniteTransition(label = "GlobalSharedTransition")
     // We do not provide csColors as a global, because people should use MaterialTheme directly instead
-    CompositionLocalProvider(LocalSharedInfiniteTransition provides globalTransition) {
+    CompositionLocalProvider(
+        LocalSharedInfiniteTransition provides globalTransition,
+        LocalTransparentScreens provides (mode == CloudStreamThemeMode.Glass),
+    ) {
         MaterialTheme(
             colorScheme = csColors.toMaterial3ColorScheme(),
             content = content,

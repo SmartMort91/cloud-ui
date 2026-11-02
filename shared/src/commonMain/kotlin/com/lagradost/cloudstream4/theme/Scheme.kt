@@ -162,7 +162,9 @@ internal fun silentBlueScheme() = CloudStreamColorScheme(
 )
 /** Liquid Glass: transparent background so the window gradient shows, frosted translucent panels */
 internal fun glassScheme() = darkScheme().copy(
-    background = Color.Transparent,
+    // Opaque on purpose: dialogs and "text on a filled button" colours come from this.
+    // Screens turn it transparent themselves, see LocalTransparentScreens.
+    background = Color(0xFF101636),
     surfaceVariant = Color(0x2EFFFFFF),
     // Used by dialogs and menus, kept mostly opaque so text stays readable
     surface = Color(0xF2101636),

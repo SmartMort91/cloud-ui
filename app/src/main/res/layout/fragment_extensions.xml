@@ -6,7 +6,7 @@
     android:id="@+id/extensions_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/primaryGrayBackground"
+    android:background="?attr/glassBar"
     android:orientation="vertical">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -18,7 +18,7 @@
             android:id="@+id/settings_toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?attr/primaryGrayBackground"
+            android:background="?attr/glassBar"
             android:paddingTop="@dimen/navbar_height"
             app:layout_scrollFlags="scroll|enterAlways"
             app:menu="@menu/repository_search"
@@ -96,7 +96,7 @@
         android:layout_width="match_parent"
         android:layout_height="80dp"
         android:layout_gravity="bottom"
-        android:background="?attr/primaryGrayBackground"
+        android:background="?attr/glassBar"
         android:baselineAligned="false"
         android:focusable="true"
         android:foreground="@drawable/outline_drawable"

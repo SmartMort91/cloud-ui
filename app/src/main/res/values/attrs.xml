@@ -72,6 +72,7 @@
         <attr name="black" format="color" />
         <attr name="glassWindow" format="reference|color" />
         <attr name="fillColor" format="color" />
+        <attr name="glassBar" format="color" />
         <attr name="onWhiteColor" format="color" />
         <attr name="onFillColor" format="color" />
         <attr name="fillStroke" format="color" />
