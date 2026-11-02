@@ -2,6 +2,9 @@
     <!-- Base application theme. Material3 -->
     <style name="AppTheme" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="glassWindow">?attr/primaryBlackBackground</item>
+        <item name="glassDialogSurface">?attr/primaryBlackBackground</item>
+        <item name="glassSheetSurface">?attr/boxItemBackground</item>
         <item name="android:colorEdgeEffect">?attr/textColor</item>
 
         <item name="android:navigationBarColor">?attr/primaryBlackBackground</item>
@@ -306,6 +309,25 @@
         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
     </style>
 
+    <style name="GlassMode">
+        <item name="android:windowBackground">@drawable/glass_backdrop</item>
+        <item name="glassWindow">@drawable/glass_backdrop</item>
+        <item name="glassDialogSurface">@color/GlassDialog</item>
+        <item name="glassSheetSurface">@color/GlassSheet</item>
+        <item name="primaryGrayBackground">@color/GlassPanel</item>
+        <item name="primaryBlackBackground">@color/transparent</item>
+        <item name="iconGrayBackground">@color/transparent</item>
+        <item name="boxItemBackground">@color/GlassItem</item>
+        <item name="textColor">@color/GlassText</item>
+        <item name="grayTextColor">@color/GlassGrayText</item>
+        <item name="iconColor">@color/GlassIcon</item>
+        <item name="white">@color/GlassText</item>
+        <item name="black">@color/GlassDeep</item>
+        <item name="colorOnPrimary">@color/GlassText</item>
+        <item name="android:navigationBarColor">@color/transparent</item>
+        <item name="android:statusBarColor">@color/transparent</item>
+    </style>
+
     <style name="MonetMode">
         <item name="primaryGrayBackground">@color/material_dynamic_neutral20</item>
         <item name="primaryBlackBackground">@color/material_dynamic_neutral10</item>
@@ -540,7 +562,7 @@
 
     <style name="LoadedStyle">
         <item name="android:navigationBarColor">?attr/primaryGrayBackground</item>
-        <item name="android:windowBackground">?attr/primaryBlackBackground</item>
+        <item name="android:windowBackground">?attr/glassWindow</item>
     </style>
 
     <style name="AndroidSearchView" parent="AppSearchViewStyle">
@@ -673,7 +695,7 @@
     </style>
 
     <style name="DialogFullscreenPlayer" parent="DialogFullscreen">
-        <item name="android:windowBackground">?attr/primaryBlackBackground</item>
+        <item name="android:windowBackground">?attr/glassDialogSurface</item>
         <item name="android:windowTranslucentNavigation">false</item>
         <item name="android:windowTranslucentStatus">false</item>
 
@@ -692,7 +714,7 @@
     </style>
 
     <style name="AlertDialogCustomBlack" parent="Theme.AppCompat.Dialog.Alert">
-        <item name="android:windowBackground">?attr/primaryBlackBackground</item>
+        <item name="android:windowBackground">?attr/glassDialogSurface</item>
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">match_parent</item>
 

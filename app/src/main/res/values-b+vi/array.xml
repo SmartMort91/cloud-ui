@@ -236,6 +236,7 @@
         <item>Rosé Pine</item>
         <item>Mocha</item>
         <item>Paper</item>
+        <item>Liquid Glass</item>
     </string-array>
     <string-array name="themes_names_values">
         <item>AmoledLight</item>
@@ -253,6 +254,7 @@
         <item>RosePine</item>
         <item>Mocha</item>
         <item>Paper</item>
+        <item>Glass</item>
     </string-array>
 
     <!--https://github.com/videolan/vlc-android/blob/72ccfb93db027b49855760001d1a930fa657c5a8/application/resources/src/main/res/values/arrays.xml#L266-->

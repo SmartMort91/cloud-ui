@@ -1,0 +1,517 @@
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/CommonActivity.kt b/app/src/main/java/com/lagradost/cloudstream3/CommonActivity.kt
+index a559e15..ae545f2 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/CommonActivity.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/CommonActivity.kt
+@@ -362,6 +362,7 @@ object CommonActivity {
+                 "RosePine" -> R.style.RosePineMode
+                 "Mocha" -> R.style.MochaMode
+                 "Paper" -> R.style.PaperMode
++                "Glass" -> R.style.GlassMode
+ 
+                 else -> R.style.AppTheme
+             }
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/utils/SnackbarHelper.kt b/app/src/main/java/com/lagradost/cloudstream3/utils/SnackbarHelper.kt
+index b43b51c..ddaefc4 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/utils/SnackbarHelper.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/utils/SnackbarHelper.kt
+@@ -1,83 +1,83 @@
+-package com.lagradost.cloudstream3.utils
+-
+-import android.app.Activity
+-import android.view.View
+-import androidx.annotation.MainThread
+-import androidx.annotation.StringRes
+-import com.google.android.material.snackbar.Snackbar
+-import com.lagradost.api.Log
+-import com.lagradost.cloudstream3.R
+-import com.lagradost.cloudstream3.mvvm.logError
+-import com.lagradost.cloudstream3.utils.UIHelper.colorFromAttribute
+-
+-object SnackbarHelper {
+-
+-    private const val TAG = "COMPACT"
+-    private var currentSnackbar: Snackbar? = null
+-
+-    @MainThread
+-    fun showSnackbar(
+-        act: Activity?,
+-        message: UiText,
+-        duration: Int = Snackbar.LENGTH_SHORT,
+-        actionText: UiText? = null,
+-        actionCallback: (() -> Unit)? = null
+-    ) {
+-        if (act == null) return
+-        showSnackbar(act, message.asString(act), duration,
+-            actionText?.asString(act), actionCallback)
+-    }
+-
+-    @MainThread
+-    fun showSnackbar(
+-        act: Activity?,
+-        @StringRes message: Int,
+-        duration: Int = Snackbar.LENGTH_SHORT,
+-        @StringRes actionText: Int? = null,
+-        actionCallback: (() -> Unit)? = null
+-    ) {
+-        if (act == null) return
+-        showSnackbar(act, act.getString(message), duration,
+-            actionText?.let { act.getString(it) }, actionCallback)
+-    }
+-
+-    @MainThread
+-    fun showSnackbar(
+-        act: Activity?,
+-        message: String?,
+-        duration: Int = Snackbar.LENGTH_SHORT,
+-        actionText: String? = null,
+-        actionCallback: (() -> Unit)? = null
+-    ) {
+-        if (act == null || message == null) {
+-            Log.w(TAG, "Invalid showSnackbar: act = $act, message = $message")
+-            return
+-        }
+-        Log.i(TAG, "showSnackbar: $message")
+-
+-        try {
+-            currentSnackbar?.dismiss()
+-        } catch (e: Exception) {
+-            logError(e)
+-        }
+-
+-        try {
+-            val parentView = act.findViewById<View>(android.R.id.content)
+-            val snackbar = Snackbar.make(parentView, message, duration)
+-
+-            actionCallback?.let {
+-                snackbar.setAction(actionText) { actionCallback.invoke() }
+-            }
+-
+-            snackbar.show()
+-            currentSnackbar = snackbar
+-
+-            snackbar.setBackgroundTint(act.colorFromAttribute(R.attr.primaryBlackBackground))
+-            snackbar.setTextColor(act.colorFromAttribute(R.attr.textColor))
+-            snackbar.setActionTextColor(act.colorFromAttribute(R.attr.colorPrimary))
+-
+-        } catch (e: Exception) {
+-            logError(e)
+-        }
+-    }
++package com.lagradost.cloudstream3.utils
++
++import android.app.Activity
++import android.view.View
++import androidx.annotation.MainThread
++import androidx.annotation.StringRes
++import com.google.android.material.snackbar.Snackbar
++import com.lagradost.api.Log
++import com.lagradost.cloudstream3.R
++import com.lagradost.cloudstream3.mvvm.logError
++import com.lagradost.cloudstream3.utils.UIHelper.colorFromAttribute
++
++object SnackbarHelper {
++
++    private const val TAG = "COMPACT"
++    private var currentSnackbar: Snackbar? = null
++
++    @MainThread
++    fun showSnackbar(
++        act: Activity?,
++        message: UiText,
++        duration: Int = Snackbar.LENGTH_SHORT,
++        actionText: UiText? = null,
++        actionCallback: (() -> Unit)? = null
++    ) {
++        if (act == null) return
++        showSnackbar(act, message.asString(act), duration,
++            actionText?.asString(act), actionCallback)
++    }
++
++    @MainThread
++    fun showSnackbar(
++        act: Activity?,
++        @StringRes message: Int,
++        duration: Int = Snackbar.LENGTH_SHORT,
++        @StringRes actionText: Int? = null,
++        actionCallback: (() -> Unit)? = null
++    ) {
++        if (act == null) return
++        showSnackbar(act, act.getString(message), duration,
++            actionText?.let { act.getString(it) }, actionCallback)
++    }
++
++    @MainThread
++    fun showSnackbar(
++        act: Activity?,
++        message: String?,
++        duration: Int = Snackbar.LENGTH_SHORT,
++        actionText: String? = null,
++        actionCallback: (() -> Unit)? = null
++    ) {
++        if (act == null || message == null) {
++            Log.w(TAG, "Invalid showSnackbar: act = $act, message = $message")
++            return
++        }
++        Log.i(TAG, "showSnackbar: $message")
++
++        try {
++            currentSnackbar?.dismiss()
++        } catch (e: Exception) {
++            logError(e)
++        }
++
++        try {
++            val parentView = act.findViewById<View>(android.R.id.content)
++            val snackbar = Snackbar.make(parentView, message, duration)
++
++            actionCallback?.let {
++                snackbar.setAction(actionText) { actionCallback.invoke() }
++            }
++
++            snackbar.show()
++            currentSnackbar = snackbar
++
++            snackbar.setBackgroundTint(act.colorFromAttribute(R.attr.glassDialogSurface))
++            snackbar.setTextColor(act.colorFromAttribute(R.attr.textColor))
++            snackbar.setActionTextColor(act.colorFromAttribute(R.attr.colorPrimary))
++
++        } catch (e: Exception) {
++            logError(e)
++        }
++    }
+ }
+\ No newline at end of file
+diff --git a/app/src/main/res/drawable/dialog__window_background.xml b/app/src/main/res/drawable/dialog__window_background.xml
+index ea31296..b6c39b4 100644
+--- a/app/src/main/res/drawable/dialog__window_background.xml
++++ b/app/src/main/res/drawable/dialog__window_background.xml
+@@ -2,6 +2,6 @@
+ <inset xmlns:android="http://schemas.android.com/apk/res/android">
+     <shape android:shape="rectangle">
+         <corners android:radius="24dp" />
+-        <solid android:color="?attr/primaryBlackBackground" />
++        <solid android:color="?attr/glassDialogSurface" />
+     </shape>
+ </inset>
+\ No newline at end of file
+diff --git a/app/src/main/res/drawable/glass_backdrop.xml b/app/src/main/res/drawable/glass_backdrop.xml
+new file mode 100644
+index 0000000..41facdb
+--- /dev/null
++++ b/app/src/main/res/drawable/glass_backdrop.xml
+@@ -0,0 +1,46 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Liquid Glass backdrop: a deep blue base with soft coloured glows that the frosted panels float over -->
++<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
++    <item>
++        <shape android:shape="rectangle">
++            <gradient
++                android:angle="315"
++                android:startColor="#101A4D"
++                android:centerColor="#0B1233"
++                android:endColor="#060A1C" />
++        </shape>
++    </item>
++    <item>
++        <shape android:shape="rectangle">
++            <gradient
++                android:type="radial"
++                android:centerX="0.1"
++                android:centerY="0.12"
++                android:gradientRadius="75%p"
++                android:startColor="#5530D0FF"
++                android:endColor="#0030D0FF" />
++        </shape>
++    </item>
++    <item>
++        <shape android:shape="rectangle">
++            <gradient
++                android:type="radial"
++                android:centerX="0.95"
++                android:centerY="0.55"
++                android:gradientRadius="70%p"
++                android:startColor="#55A84CFF"
++                android:endColor="#00A84CFF" />
++        </shape>
++    </item>
++    <item>
++        <shape android:shape="rectangle">
++            <gradient
++                android:type="radial"
++                android:centerX="0.2"
++                android:centerY="0.95"
++                android:gradientRadius="65%p"
++                android:startColor="#40FF5FA2"
++                android:endColor="#00FF5FA2" />
++        </shape>
++    </item>
++</layer-list>
+diff --git a/app/src/main/res/drawable/rounded_dialog.xml b/app/src/main/res/drawable/rounded_dialog.xml
+index eaa3db6..ec06390 100644
+--- a/app/src/main/res/drawable/rounded_dialog.xml
++++ b/app/src/main/res/drawable/rounded_dialog.xml
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <shape xmlns:android="http://schemas.android.com/apk/res/android"
+        android:shape="rectangle">
+-    <solid android:color="?attr/boxItemBackground"/>
++    <solid android:color="?attr/glassSheetSurface"/>
+     <corners android:topLeftRadius="28dp"
+              android:topRightRadius="28dp"/>
+ </shape>
+diff --git a/app/src/main/res/values-b+es/array.xml b/app/src/main/res/values-b+es/array.xml
+index 8708ad1..d81ffc8 100644
+--- a/app/src/main/res/values-b+es/array.xml
++++ b/app/src/main/res/values-b+es/array.xml
+@@ -235,6 +235,7 @@
+         <item>Rosé Pine</item>
+         <item>Mocha</item>
+         <item>Paper</item>
++        <item>Liquid Glass</item>
+     </string-array>
+     <string-array name="themes_names_values">
+         <item>AmoledLight</item>
+@@ -252,6 +253,7 @@
+         <item>RosePine</item>
+         <item>Mocha</item>
+         <item>Paper</item>
++        <item>Glass</item>
+     </string-array>
+ 
+     <!--https://github.com/videolan/vlc-android/blob/72ccfb93db027b49855760001d1a930fa657c5a8/application/resources/src/main/res/values/arrays.xml#L266-->
+diff --git a/app/src/main/res/values-b+pl/array.xml b/app/src/main/res/values-b+pl/array.xml
+index 3cf8648..fe49716 100644
+--- a/app/src/main/res/values-b+pl/array.xml
++++ b/app/src/main/res/values-b+pl/array.xml
+@@ -245,6 +245,7 @@
+         <item>Rosé Pine</item>
+         <item>Mocha</item>
+         <item>Paper</item>
++        <item>Liquid Glass</item>
+     </string-array>
+     <string-array name="themes_names_values">
+         <item>AmoledLight</item>
+@@ -262,6 +263,7 @@
+         <item>RosePine</item>
+         <item>Mocha</item>
+         <item>Paper</item>
++        <item>Glass</item>
+     </string-array>
+ 
+     <!--https://github.com/videolan/vlc-android/blob/72ccfb93db027b49855760001d1a930fa657c5a8/application/resources/src/main/res/values/arrays.xml#L266-->
+diff --git a/app/src/main/res/values-b+tr/array.xml b/app/src/main/res/values-b+tr/array.xml
+index ca8a400..1e2e487 100644
+--- a/app/src/main/res/values-b+tr/array.xml
++++ b/app/src/main/res/values-b+tr/array.xml
+@@ -256,6 +256,7 @@
+         <item>Rosé Pine</item>
+         <item>Mocha</item>
+         <item>Paper</item>
++        <item>Liquid Glass</item>
+     </string-array>
+     <string-array name="themes_names_values">
+         <item>AmoledLight</item>
+@@ -273,6 +274,7 @@
+         <item>RosePine</item>
+         <item>Mocha</item>
+         <item>Paper</item>
++        <item>Glass</item>
+     </string-array>
+ 
+     <string-array name="extension_statuses">
+diff --git a/app/src/main/res/values-b+vi/array.xml b/app/src/main/res/values-b+vi/array.xml
+index bc5ad98..f4c02e6 100644
+--- a/app/src/main/res/values-b+vi/array.xml
++++ b/app/src/main/res/values-b+vi/array.xml
+@@ -236,6 +236,7 @@
+         <item>Rosé Pine</item>
+         <item>Mocha</item>
+         <item>Paper</item>
++        <item>Liquid Glass</item>
+     </string-array>
+     <string-array name="themes_names_values">
+         <item>AmoledLight</item>
+@@ -253,6 +254,7 @@
+         <item>RosePine</item>
+         <item>Mocha</item>
+         <item>Paper</item>
++        <item>Glass</item>
+     </string-array>
+ 
+     <!--https://github.com/videolan/vlc-android/blob/72ccfb93db027b49855760001d1a930fa657c5a8/application/resources/src/main/res/values/arrays.xml#L266-->
+diff --git a/app/src/main/res/values/array.xml b/app/src/main/res/values/array.xml
+index 9bc7804..4f5201d 100644
+--- a/app/src/main/res/values/array.xml
++++ b/app/src/main/res/values/array.xml
+@@ -319,6 +319,7 @@
+         <item>Rosé Pine</item>
+         <item>Mocha</item>
+         <item>Paper</item>
++        <item>Liquid Glass</item>
+     </string-array>
+     <string-array name="themes_names_values">
+         <item>AmoledLight</item>
+@@ -336,6 +337,7 @@
+         <item>RosePine</item>
+         <item>Mocha</item>
+         <item>Paper</item>
++        <item>Glass</item>
+     </string-array>
+ 
+     <string-array name="extension_statuses">
+diff --git a/app/src/main/res/values/attrs.xml b/app/src/main/res/values/attrs.xml
+index 53b2947..55d0894 100644
+--- a/app/src/main/res/values/attrs.xml
++++ b/app/src/main/res/values/attrs.xml
+@@ -70,6 +70,9 @@
+         <attr name="iconColor" format="color" />
+         <attr name="white" format="color" />
+         <attr name="black" format="color" />
++        <attr name="glassWindow" format="reference|color" />
++        <attr name="glassDialogSurface" format="color" />
++        <attr name="glassSheetSurface" format="color" />
+         <attr name="account_unselected_stroke" format="color" />
+     </declare-styleable>
+ 
+diff --git a/app/src/main/res/values/colors.xml b/app/src/main/res/values/colors.xml
+index 3e60deb..493c10a 100644
+--- a/app/src/main/res/values/colors.xml
++++ b/app/src/main/res/values/colors.xml
+@@ -166,4 +166,14 @@
+     <color name="PaperTextColor">#2B2620</color>
+     <color name="PaperGrayTextColor">#7A7164</color>
+     <color name="PaperIconColor">#5C5346</color>
++
++    <!-- Liquid Glass theme -->
++    <color name="GlassPanel">#2EFFFFFF</color>
++    <color name="GlassItem">#1FFFFFFF</color>
++    <color name="GlassIcon">#E6EEFF</color>
++    <color name="GlassText">#F4F7FF</color>
++    <color name="GlassGrayText">#B7C3E0</color>
++    <color name="GlassSheet">#E61A2250</color>
++    <color name="GlassDialog">#F2101636</color>
++    <color name="GlassDeep">#0A0F26</color>
+ </resources>
+diff --git a/app/src/main/res/values/styles.xml b/app/src/main/res/values/styles.xml
+index 325b97d..4258e96 100644
+--- a/app/src/main/res/values/styles.xml
++++ b/app/src/main/res/values/styles.xml
+@@ -2,6 +2,9 @@
+     <!-- Base application theme. Material3 -->
+     <style name="AppTheme" parent="Theme.Material3.Dark.NoActionBar">
+         <item name="android:windowBackground">@drawable/splash_background</item>
++        <item name="glassWindow">?attr/primaryBlackBackground</item>
++        <item name="glassDialogSurface">?attr/primaryBlackBackground</item>
++        <item name="glassSheetSurface">?attr/boxItemBackground</item>
+         <item name="android:colorEdgeEffect">?attr/textColor</item>
+ 
+         <item name="android:navigationBarColor">?attr/primaryBlackBackground</item>
+@@ -306,6 +309,25 @@
+         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+     </style>
+ 
++    <style name="GlassMode">
++        <item name="android:windowBackground">@drawable/glass_backdrop</item>
++        <item name="glassWindow">@drawable/glass_backdrop</item>
++        <item name="glassDialogSurface">@color/GlassDialog</item>
++        <item name="glassSheetSurface">@color/GlassSheet</item>
++        <item name="primaryGrayBackground">@color/GlassPanel</item>
++        <item name="primaryBlackBackground">@color/transparent</item>
++        <item name="iconGrayBackground">@color/transparent</item>
++        <item name="boxItemBackground">@color/GlassItem</item>
++        <item name="textColor">@color/GlassText</item>
++        <item name="grayTextColor">@color/GlassGrayText</item>
++        <item name="iconColor">@color/GlassIcon</item>
++        <item name="white">@color/GlassText</item>
++        <item name="black">@color/GlassDeep</item>
++        <item name="colorOnPrimary">@color/GlassText</item>
++        <item name="android:navigationBarColor">@color/transparent</item>
++        <item name="android:statusBarColor">@color/transparent</item>
++    </style>
++
+     <style name="MonetMode">
+         <item name="primaryGrayBackground">@color/material_dynamic_neutral20</item>
+         <item name="primaryBlackBackground">@color/material_dynamic_neutral10</item>
+@@ -540,7 +562,7 @@
+ 
+     <style name="LoadedStyle">
+         <item name="android:navigationBarColor">?attr/primaryGrayBackground</item>
+-        <item name="android:windowBackground">?attr/primaryBlackBackground</item>
++        <item name="android:windowBackground">?attr/glassWindow</item>
+     </style>
+ 
+     <style name="AndroidSearchView" parent="AppSearchViewStyle">
+@@ -673,7 +695,7 @@
+     </style>
+ 
+     <style name="DialogFullscreenPlayer" parent="DialogFullscreen">
+-        <item name="android:windowBackground">?attr/primaryBlackBackground</item>
++        <item name="android:windowBackground">?attr/glassDialogSurface</item>
+         <item name="android:windowTranslucentNavigation">false</item>
+         <item name="android:windowTranslucentStatus">false</item>
+ 
+@@ -692,7 +714,7 @@
+     </style>
+ 
+     <style name="AlertDialogCustomBlack" parent="Theme.AppCompat.Dialog.Alert">
+-        <item name="android:windowBackground">?attr/primaryBlackBackground</item>
++        <item name="android:windowBackground">?attr/glassDialogSurface</item>
+         <item name="android:layout_width">match_parent</item>
+         <item name="android:layout_height">match_parent</item>
+ 
+diff --git a/shared/src/androidMain/kotlin/com/lagradost/cloudstream4/theme/ColorPreference.kt b/shared/src/androidMain/kotlin/com/lagradost/cloudstream4/theme/ColorPreference.kt
+index 17d7153..9f6732d 100644
+--- a/shared/src/androidMain/kotlin/com/lagradost/cloudstream4/theme/ColorPreference.kt
++++ b/shared/src/androidMain/kotlin/com/lagradost/cloudstream4/theme/ColorPreference.kt
+@@ -16,6 +16,7 @@ fun perfToMode(perf: String?) =
+         "Dracula" -> CloudStreamThemeMode.Dracula
+         "Lavender" -> CloudStreamThemeMode.Lavender
+         "SilentBlue" -> CloudStreamThemeMode.SilentBlue
++        "Glass" -> CloudStreamThemeMode.Glass
+         "Monet" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+             CloudStreamThemeMode.Dynamic
+         } else {
+diff --git a/shared/src/commonMain/kotlin/com/lagradost/cloudstream4/theme/Scheme.kt b/shared/src/commonMain/kotlin/com/lagradost/cloudstream4/theme/Scheme.kt
+index d51c75d..34d6130 100644
+--- a/shared/src/commonMain/kotlin/com/lagradost/cloudstream4/theme/Scheme.kt
++++ b/shared/src/commonMain/kotlin/com/lagradost/cloudstream4/theme/Scheme.kt
+@@ -159,4 +159,15 @@ internal fun silentBlueScheme() = CloudStreamColorScheme(
+     primary = CloudStreamPalette.Primary,
+     ongoing = CloudStreamPalette.Ongoing,
+     isLight = false,
+-)
+\ No newline at end of file
++)
++/** Liquid Glass: transparent background so the window gradient shows, frosted translucent panels */
++internal fun glassScheme() = darkScheme().copy(
++    background = Color.Transparent,
++    surfaceVariant = Color(0x2EFFFFFF),
++    // Used by dialogs and menus, kept mostly opaque so text stays readable
++    surface = Color(0xF2101636),
++    surfaceContainer = Color(0x1FFFFFFF),
++    onBackground = Color(0xFFF4F7FF),
++    onSurfaceVariant = Color(0xFFB7C3E0),
++    icon = Color(0xFFE6EEFF),
++)
+diff --git a/shared/src/commonMain/kotlin/com/lagradost/cloudstream4/theme/Theme.kt b/shared/src/commonMain/kotlin/com/lagradost/cloudstream4/theme/Theme.kt
+index 196d8d6..0349804 100644
+--- a/shared/src/commonMain/kotlin/com/lagradost/cloudstream4/theme/Theme.kt
++++ b/shared/src/commonMain/kotlin/com/lagradost/cloudstream4/theme/Theme.kt
+@@ -35,6 +35,9 @@ enum class CloudStreamThemeMode {
+     /** "SilentBlue" */
+     SilentBlue,
+ 
++    /** "Glass" Liquid Glass, translucent panels over a gradient backdrop */
++    Glass,
++
+     /** "System" resolved on each platform via [isSystemInDarkTheme] */
+     FollowSystem,
+ 
+@@ -60,6 +63,7 @@ fun modeToTheme(mode : CloudStreamThemeMode, primaryColor: CloudStreamPrimaryCol
+             CloudStreamThemeMode.Dracula -> draculaScheme()
+             CloudStreamThemeMode.Lavender -> lavenderScheme()
+             CloudStreamThemeMode.SilentBlue -> silentBlueScheme()
++            CloudStreamThemeMode.Glass -> glassScheme()
+             CloudStreamThemeMode.FollowSystem -> if (systemDark) darkScheme() else lightScheme()
+             CloudStreamThemeMode.Dynamic -> dynamicTheme
+         }

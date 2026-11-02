@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Liquid Glass backdrop: a deep blue base with soft coloured glows that the frosted panels float over -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="315"
+                android:startColor="#101A4D"
+                android:centerColor="#0B1233"
+                android:endColor="#060A1C" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:centerX="0.1"
+                android:centerY="0.12"
+                android:gradientRadius="75%p"
+                android:startColor="#5530D0FF"
+                android:endColor="#0030D0FF" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:centerX="0.95"
+                android:centerY="0.55"
+                android:gradientRadius="70%p"
+                android:startColor="#55A84CFF"
+                android:endColor="#00A84CFF" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:centerX="0.2"
+                android:centerY="0.95"
+                android:gradientRadius="65%p"
+                android:startColor="#40FF5FA2"
+                android:endColor="#00FF5FA2" />
+        </shape>
+    </item>
+</layer-list>

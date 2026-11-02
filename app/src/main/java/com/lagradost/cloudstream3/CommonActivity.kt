@@ -362,6 +362,7 @@ object CommonActivity {
                 "RosePine" -> R.style.RosePineMode
                 "Mocha" -> R.style.MochaMode
                 "Paper" -> R.style.PaperMode
+                "Glass" -> R.style.GlassMode
 
                 else -> R.style.AppTheme
             }

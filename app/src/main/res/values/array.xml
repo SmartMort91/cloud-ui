@@ -319,6 +319,7 @@
         <item>Rosé Pine</item>
         <item>Mocha</item>
         <item>Paper</item>
+        <item>Liquid Glass</item>
     </string-array>
     <string-array name="themes_names_values">
         <item>AmoledLight</item>
@@ -336,6 +337,7 @@
         <item>RosePine</item>
         <item>Mocha</item>
         <item>Paper</item>
+        <item>Glass</item>
     </string-array>
 
     <string-array name="extension_statuses">

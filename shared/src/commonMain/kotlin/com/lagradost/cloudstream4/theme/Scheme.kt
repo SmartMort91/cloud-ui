@@ -160,3 +160,14 @@ internal fun silentBlueScheme() = CloudStreamColorScheme(
     ongoing = CloudStreamPalette.Ongoing,
     isLight = false,
 )
+/** Liquid Glass: transparent background so the window gradient shows, frosted translucent panels */
+internal fun glassScheme() = darkScheme().copy(
+    background = Color.Transparent,
+    surfaceVariant = Color(0x2EFFFFFF),
+    // Used by dialogs and menus, kept mostly opaque so text stays readable
+    surface = Color(0xF2101636),
+    surfaceContainer = Color(0x1FFFFFFF),
+    onBackground = Color(0xFFF4F7FF),
+    onSurfaceVariant = Color(0xFFB7C3E0),
+    icon = Color(0xFFE6EEFF),
+)

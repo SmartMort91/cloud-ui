@@ -72,7 +72,7 @@ object SnackbarHelper {
             snackbar.show()
             currentSnackbar = snackbar
 
-            snackbar.setBackgroundTint(act.colorFromAttribute(R.attr.primaryBlackBackground))
+            snackbar.setBackgroundTint(act.colorFromAttribute(R.attr.glassDialogSurface))
             snackbar.setTextColor(act.colorFromAttribute(R.attr.textColor))
             snackbar.setActionTextColor(act.colorFromAttribute(R.attr.colorPrimary))
 

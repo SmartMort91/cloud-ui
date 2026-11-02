@@ -166,4 +166,14 @@
     <color name="PaperTextColor">#2B2620</color>
     <color name="PaperGrayTextColor">#7A7164</color>
     <color name="PaperIconColor">#5C5346</color>
+
+    <!-- Liquid Glass theme -->
+    <color name="GlassPanel">#2EFFFFFF</color>
+    <color name="GlassItem">#1FFFFFFF</color>
+    <color name="GlassIcon">#E6EEFF</color>
+    <color name="GlassText">#F4F7FF</color>
+    <color name="GlassGrayText">#B7C3E0</color>
+    <color name="GlassSheet">#E61A2250</color>
+    <color name="GlassDialog">#F2101636</color>
+    <color name="GlassDeep">#0A0F26</color>
 </resources>
