@@ -1,0 +1,35 @@
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchAdaptor.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchAdaptor.kt
+index 92fa01a..1dcf520 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchAdaptor.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/search/SearchAdaptor.kt
+@@ -54,6 +54,22 @@ class SearchAdapter(
+ 
+     private val coverHeight: Int get() = (resView.itemWidth / coverRatio).roundToInt()
+ 
++    /** The card width the current image heights were calculated from */
++    private var boundItemWidth = -1
++
++    init {
++        // The grid can be measured after the first cards are bound (it starts hidden and the
++        // column count changes), which left the first banners with a wrong height. Rebind once
++        // the real card width is known.
++        resView.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
++            val width = resView.itemWidth
++            if (width > 0 && width != boundItemWidth && itemCount > 0) {
++                boundItemWidth = width
++                resView.post { notifyDataSetChanged() }
++            }
++        }
++    }
++
+     override fun onCreateContent(parent: ViewGroup): ViewHolderState<Any> {
+         val inflater = LayoutInflater.from(parent.context)
+ 
+@@ -81,6 +97,7 @@ class SearchAdapter(
+     }
+ 
+     override fun onBindContent(holder: ViewHolderState<Any>, item: SearchResponse, position: Int) {
++        boundItemWidth = resView.itemWidth
+         val imageView = when (val binding = holder.view) {
+             is SearchResultGridExpandedBinding -> binding.imageView
+             is SearchResultGridBinding -> binding.imageView
