@@ -1,0 +1,25 @@
+diff --git a/.github/workflows/custom_release.yml b/.github/workflows/custom_release.yml
+index 0b0fc51..4af4bc1 100644
+--- a/.github/workflows/custom_release.yml
++++ b/.github/workflows/custom_release.yml
+@@ -1,17 +1,16 @@
+ name: Sync CloudStream and publish
+ 
+-# Every day (and on demand) this brings the newest official CloudStream into this repo while
++# On demand (Actions tab > Run workflow) this brings the newest official CloudStream into this repo while
+ # keeping the custom UI, then builds a signed APK and publishes it as the "pre-release"
+ # release. The app's built-in updater reads that release, so installed copies update themselves.
+-# Pushing your own changes to main also builds and publishes.
++# There is no daily schedule. Pushing your own changes to main builds and publishes without
++# merging upstream.
+ #
+ # Needs two repository secrets (Settings > Secrets and variables > Actions):
+ #   SIGNING_KEYSTORE_BASE64  the signing key file, base64 encoded
+ #   SIGNING_PASSWORD         the password of that key
+ 
+ on:
+-  schedule:
+-    - cron: '23 5 * * *'
+   workflow_dispatch:
+   push:
+     branches: [ main ]
