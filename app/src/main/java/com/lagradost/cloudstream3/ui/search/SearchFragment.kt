@@ -431,6 +431,15 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
         HomeFragment.configEvent.invoke()
     }
 
+    /** One fixed banner height from screen metrics, so it never depends on measuring */
+    private fun bannerHeightPx(context: android.content.Context): Int {
+        val dm = context.resources.displayMetrics
+        val screenDp = dm.widthPixels / dm.density
+        val paneDp = if (keyboardMode) screenDp - 320f - 90f else screenDp - 90f
+        val cardDp = paneDp / bannerSpan(context) - 12f
+        return (cardDp / 1.6f * dm.density).toInt().coerceAtLeast(1)
+    }
+
     /** Number of banner columns, sized so a banner is never smaller than ~190dp wide */
     private fun bannerSpan(context: android.content.Context): Int {
         val dm = context.resources.displayMetrics
@@ -469,6 +478,7 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
                     searchAutofitResults,
                     isHorizontal = wideCards,
                     forceTitle = isBanner,
+                    fixedCoverHeight = { bannerHeightPx(root.context) },
                 ) { callback ->
                     SearchHelper.handleSearchClickCallback(callback)
                 }
