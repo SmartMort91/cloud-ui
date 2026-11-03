@@ -42,6 +42,17 @@
                 app:tint="?attr/textColor" />
 
             <ImageView
+                android:id="@+id/library_collections"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginStart="10dp"
+                android:background="?selectableItemBackgroundBorderless"
+                android:contentDescription="@string/collections_title"
+                android:src="@drawable/ic_baseline_add_24"
+                app:tint="?attr/textColor" />
+
+            <ImageView
                 android:id="@+id/library_sort"
                 android:layout_width="45dp"
                 android:layout_height="45dp"

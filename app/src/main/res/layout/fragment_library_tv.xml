@@ -40,9 +40,25 @@
                 android:contentDescription="@string/change_providers_img_des"
                 android:focusable="true"
                 android:nextFocusLeft="@id/navigation_library"
-                android:nextFocusRight="@id/library_sort"
+                android:nextFocusRight="@id/library_collections"
                 android:padding="2dp"
                 android:src="@drawable/ic_baseline_extension_24"
+                android:tag="@string/tv_no_focus_tag"
+                app:tint="?attr/textColor" />
+
+            <ImageView
+                android:id="@+id/library_collections"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginStart="10dp"
+                android:background="?selectableItemBackgroundBorderless"
+                android:contentDescription="@string/collections_title"
+                android:src="@drawable/ic_baseline_add_24"
+                android:focusable="true"
+                android:nextFocusLeft="@id/provider_selector"
+                android:nextFocusRight="@id/library_sort"
+                android:padding="1dp"
                 android:tag="@string/tv_no_focus_tag"
                 app:tint="?attr/textColor" />
 
@@ -55,7 +71,7 @@
                 android:background="?selectableItemBackgroundBorderless"
                 android:contentDescription="@string/change_providers_img_des"
                 android:focusable="true"
-                android:nextFocusLeft="@id/provider_selector"
+                android:nextFocusLeft="@id/library_collections"
                 android:nextFocusRight="@id/list_selector"
                 android:src="@drawable/ic_baseline_sort_24"
                 android:tag="@string/tv_no_focus_tag"

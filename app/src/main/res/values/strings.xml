@@ -844,4 +844,13 @@
     </plurals>
     <string name="player_is_live">Live</string>
     <string name="installed_plugins">Installed plugins</string>
+    <string name="collections_title">Collections</string>
+    <string name="collections_add">Add to collection…</string>
+    <string name="collection_new">New collection</string>
+    <string name="collection_new_item">＋ New collection…</string>
+    <string name="collection_rename">Rename collection</string>
+    <string name="collection_delete">Delete collection</string>
+    <string name="collection_delete_confirm">Delete \"%1$s\"? Titles stay in your library.</string>
+    <string name="collection_name_invalid">Enter a name that is not already used</string>
+    <string name="collections_none">No collections yet</string>
 </resources>

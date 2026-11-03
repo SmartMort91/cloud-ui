@@ -31,6 +31,7 @@ import com.lagradost.cloudstream3.mvvm.observeNullable
 import com.lagradost.cloudstream3.services.SubscriptionWorkManager
 import com.lagradost.cloudstream3.ui.BaseFragment
 import com.lagradost.cloudstream3.ui.WatchType
+import com.lagradost.cloudstream3.utils.CustomCollections
 import com.lagradost.cloudstream3.ui.home.TagBrowse
 import com.lagradost.cloudstream3.ui.download.DownloadButtonSetup
 import com.lagradost.cloudstream3.ui.player.ExtractorLinkGenerator
@@ -579,12 +580,19 @@ class ResultFragmentTv : BaseFragment<FragmentResultTvBinding>(
 
                     setOnClickListener { view ->
                         activity?.showBottomDialog(
-                            WatchType.entries.map { view.context.getString(it.stringRes) }.toList(),
+                            WatchType.entries.map { view.context.getString(it.stringRes) }.toList() +
+                                    view.context.getString(R.string.collections_add),
                             watchType.ordinal,
                             view.context.getString(R.string.action_add_to_bookmarks),
                             showApply = false,
                             {}) {
-                            viewModel.updateWatchStatus(WatchType.entries[it], context)
+                            if (it >= WatchType.entries.size) {
+                                viewModel.collectionItem()?.let { item ->
+                                    with(CustomCollections) { activity?.showCollectionPicker(item) }
+                                }
+                            } else {
+                                viewModel.updateWatchStatus(WatchType.entries[it], context)
+                            }
                         }
                     }
                 }

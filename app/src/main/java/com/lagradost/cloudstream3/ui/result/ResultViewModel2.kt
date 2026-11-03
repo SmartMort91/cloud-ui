@@ -727,6 +727,22 @@ class ResultViewModel2 : ViewModel() {
         }
     }
 
+    /** Snapshot of the current title for saving into a custom collection */
+    fun collectionItem(): com.lagradost.cloudstream3.utils.CustomCollections.Item? {
+        val response = currentResponse ?: return null
+        val id = currentId ?: return null
+        return com.lagradost.cloudstream3.utils.CustomCollections.Item(
+            id,
+            response.name,
+            response.url,
+            response.apiName,
+            response.type.name,
+            response.posterUrl,
+            response.year,
+            unixTimeMS,
+        )
+    }
+
     private val _watchStatus: MutableLiveData<WatchType> = MutableLiveData(WatchType.NONE)
     val watchStatus: LiveData<WatchType> get() = _watchStatus
 

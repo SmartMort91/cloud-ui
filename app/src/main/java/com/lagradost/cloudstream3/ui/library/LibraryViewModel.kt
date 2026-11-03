@@ -15,6 +15,8 @@ import com.lagradost.cloudstream3.syncproviders.SyncAPI
 import com.lagradost.cloudstream3.utils.Coroutines.ioSafe
 import com.lagradost.cloudstream3.utils.DataStoreHelper
 import com.lagradost.cloudstream3.utils.DataStoreHelper.currentAccount
+import com.lagradost.cloudstream3.utils.CustomCollections
+import com.lagradost.cloudstream3.utils.txt
 
 enum class ListSorting(@StringRes val stringRes: Int) {
     Query(R.string.none),
@@ -117,6 +119,11 @@ class LibraryViewModel : ViewModel() {
                     SyncAPI.Page(
                         it.name,
                         it.items
+                    )
+                } + CustomCollections.getAll().map { collection ->
+                    SyncAPI.Page(
+                        txt(collection.name),
+                        collection.items.map { it.toLibraryItem() }
                     )
                 }
 

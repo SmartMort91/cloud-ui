@@ -56,6 +56,7 @@ import com.lagradost.cloudstream3.services.SubscriptionWorkManager
 import com.lagradost.cloudstream3.syncproviders.AccountManager.Companion.APP_STRING_SHARE
 import com.lagradost.cloudstream3.ui.BaseFragment
 import com.lagradost.cloudstream3.ui.WatchType
+import com.lagradost.cloudstream3.utils.CustomCollections
 import com.lagradost.cloudstream3.ui.download.DOWNLOAD_ACTION_DOWNLOAD
 import com.lagradost.cloudstream3.ui.download.DOWNLOAD_ACTION_LONG_CLICK
 import com.lagradost.cloudstream3.ui.download.DownloadButtonSetup
@@ -1334,12 +1335,19 @@ open class ResultFragmentPhone : BaseFragment<FragmentResultSwipeBinding>(
 
                 setOnClickListener { fab ->
                     activity?.showBottomDialog(
-                        WatchType.entries.map { fab.context.getString(it.stringRes) }.toList(),
+                        WatchType.entries.map { fab.context.getString(it.stringRes) }.toList() +
+                                fab.context.getString(R.string.collections_add),
                         watchType.ordinal,
                         fab.context.getString(R.string.action_add_to_bookmarks),
                         showApply = false,
                         {}) {
-                        viewModel.updateWatchStatus(WatchType.entries[it], context)
+                        if (it >= WatchType.entries.size) {
+                            viewModel.collectionItem()?.let { item ->
+                                with(CustomCollections) { activity?.showCollectionPicker(item) }
+                            }
+                        } else {
+                            viewModel.updateWatchStatus(WatchType.entries[it], context)
+                        }
                     }
                 }
             }

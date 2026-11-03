@@ -1,5 +1,6 @@
 package com.lagradost.cloudstream3.ui.library
 
+import com.lagradost.cloudstream3.utils.CustomCollections
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
@@ -134,6 +135,9 @@ class LibraryFragment : BaseFragment<FragmentLibraryBinding>(
         binding: FragmentLibraryBinding,
         savedInstanceState: Bundle?
     ) {
+        binding.libraryCollections.setOnClickListener {
+            activity?.let { act -> with(CustomCollections) { act.showCollectionManager() } }
+        }
         binding.sortFab.setOnClickListener(sortChangeClickListener)
         binding.librarySort.setOnClickListener(sortChangeClickListener)
 
