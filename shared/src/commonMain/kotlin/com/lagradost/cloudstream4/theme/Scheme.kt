@@ -161,13 +161,32 @@ internal fun silentBlueScheme() = CloudStreamColorScheme(
     isLight = false,
 )
 /** Liquid Glass: transparent background so the window gradient shows, frosted translucent panels */
-internal fun glassScheme() = darkScheme().copy(
+/** A dark theme made from seven colours, in the same roles as the XML themes */
+internal fun solidScheme(
+    black: Long,
+    gray: Long,
+    iconGray: Long,
+    item: Long,
+    text: Long,
+    grayText: Long,
+    icon: Long,
+) = darkScheme().copy(
+    background = Color(black),
+    surfaceVariant = Color(gray),
+    surface = Color(iconGray),
+    surfaceContainer = Color(item),
+    onBackground = Color(text),
+    onSurfaceVariant = Color(grayText),
+    icon = Color(icon),
+)
+
+internal fun glassScheme(tint: Color = Color(0xFF101636)) = darkScheme().copy(
     // Opaque on purpose: dialogs and "text on a filled button" colours come from this.
     // Screens turn it transparent themselves, see LocalTransparentScreens.
-    background = Color(0xFF101636),
+    background = tint,
     surfaceVariant = Color(0x2EFFFFFF),
     // Used by dialogs and menus, kept mostly opaque so text stays readable
-    surface = Color(0xF2101636),
+    surface = tint.copy(alpha = 0.95f),
     surfaceContainer = Color(0x1FFFFFFF),
     onBackground = Color(0xFFF4F7FF),
     onSurfaceVariant = Color(0xFFB7C3E0),

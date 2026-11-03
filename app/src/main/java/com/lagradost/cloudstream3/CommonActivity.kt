@@ -363,6 +363,12 @@ object CommonActivity {
                 "Mocha" -> R.style.MochaMode
                 "Paper" -> R.style.PaperMode
                 "Glass" -> R.style.GlassMode
+                "GlassAurora" -> R.style.GlassAuroraMode
+                "GlassSunset" -> R.style.GlassSunsetMode
+                "Ocean" -> R.style.OceanMode
+                "Ember" -> R.style.EmberMode
+                "Crimson" -> R.style.CrimsonMode
+                "Graphite" -> R.style.GraphiteMode
 
                 else -> R.style.AppTheme
             }

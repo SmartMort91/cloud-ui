@@ -28,6 +28,7 @@ import com.lagradost.cloudstream3.MainActivity
 import com.lagradost.cloudstream3.R
 import com.lagradost.cloudstream3.SearchQuality
 import com.lagradost.cloudstream3.mvvm.safe
+import com.lagradost.cloudstream3.ui.FloatingNav
 import com.lagradost.cloudstream3.ui.UiPrefs
 import com.lagradost.cloudstream3.ui.subtitles.SUBTITLE_AUTO_SELECT_KEY
 import com.lagradost.cloudstream3.ui.subtitles.SubtitlesFragment
@@ -138,6 +139,7 @@ object SettingsUIScreen : SearchableSettings {
         val tilesTitle = stringResource(R.string.ui_home_tiles_settings)
         val focusTitle = stringResource(R.string.ui_focus_style_settings)
         val switcherTitle = stringResource(R.string.ui_provider_switcher_settings)
+        val floatTitle = stringResource(R.string.ui_floating_nav_settings)
 
         val subLangTitle = stringResource(R.string.subs_auto_select_language)
         val noneLabel = stringResource(R.string.none)
@@ -242,6 +244,21 @@ object SettingsUIScreen : SearchableSettings {
                             switcherTitle, onOffNames, onOffValues,
                             UiPrefs.getOpt(UiPrefs.PROVIDER_SWITCHER, "on")
                         ) { UiPrefs.putOpt(UiPrefs.PROVIDER_SWITCHER, it) }
+                    }
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = floatTitle,
+                    subtitle = label(
+                        onOffNames, onOffValues, UiPrefs.getOpt(FloatingNav.OPTION, "on")
+                    ),
+                    onClick = {
+                        pick(
+                            floatTitle, onOffNames, onOffValues,
+                            UiPrefs.getOpt(FloatingNav.OPTION, "on")
+                        ) {
+                            UiPrefs.putOpt(FloatingNav.OPTION, it)
+                            safe { activity?.recreate() }
+                        }
                     }
                 ),
                 Preference.PreferenceItem.TextPreference(

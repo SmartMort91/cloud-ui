@@ -257,6 +257,12 @@
         <item>Mocha</item>
         <item>Paper</item>
         <item>Liquid Glass</item>
+        <item>Ocean</item>
+        <item>Ember</item>
+        <item>Crimson</item>
+        <item>Graphite</item>
+        <item>Aurora Glass</item>
+        <item>Sunset Glass</item>
     </string-array>
     <string-array name="themes_names_values">
         <item>AmoledLight</item>
@@ -275,6 +281,12 @@
         <item>Mocha</item>
         <item>Paper</item>
         <item>Glass</item>
+        <item>Ocean</item>
+        <item>Ember</item>
+        <item>Crimson</item>
+        <item>Graphite</item>
+        <item>GlassAurora</item>
+        <item>GlassSunset</item>
     </string-array>
 
     <string-array name="extension_statuses">

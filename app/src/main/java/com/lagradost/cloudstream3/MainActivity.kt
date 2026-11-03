@@ -559,8 +559,10 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
         binding?.apply {
             navRailView.isVisible = isNavVisible && isLandscape()
             navView.isVisible = isNavVisible && !isLandscape()
+            com.lagradost.cloudstream3.ui.FloatingNav.configure(this, isNavVisible, isLandscape())
             findViewById<View>(R.id.nav_fade)?.isVisible =
-                isNavVisible && !isLandscape() && !isLayout(TV or EMULATOR)
+                isNavVisible && !isLandscape() && !isLayout(TV or EMULATOR) &&
+                    !com.lagradost.cloudstream3.ui.FloatingNav.isFloating
             navHostFragment.apply {
                 val marginPx = resources.getDimensionPixelSize(R.dimen.nav_rail_view_width)
                 layoutParams =
@@ -1288,6 +1290,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
         }
 
         binding?.apply {
+            com.lagradost.cloudstream3.ui.FloatingNav.attach(navHostFragment)
             // The nav bar is a floating pill. Keep it a fixed height and lift it above the
             // system navigation bar with a margin instead of stretching it under it.
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
@@ -1305,6 +1308,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                         lp.bottomMargin = baseMargin + bars.bottom
                         v.layoutParams = lp
                     }
+                    com.lagradost.cloudstream3.ui.FloatingNav.setSystemBottom(bars.bottom)
                     wi
                 }
             }

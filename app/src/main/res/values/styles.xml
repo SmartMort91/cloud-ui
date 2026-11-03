@@ -339,6 +339,75 @@
         <item name="android:statusBarColor">@color/transparent</item>
     </style>
 
+    <style name="OceanMode">
+        <item name="primaryGrayBackground">@color/OceanPrimaryGrayBackground</item>
+        <item name="primaryBlackBackground">@color/OceanBitDarkerGrayBackground</item>
+        <item name="iconGrayBackground">@color/OceanGrayBackground</item>
+        <item name="boxItemBackground">@color/OceanItemBackground</item>
+        <item name="textColor">@color/OceanTextColor</item>
+        <item name="grayTextColor">@color/OceanGrayTextColor</item>
+        <item name="iconColor">@color/OceanIconColor</item>
+        <item name="white">@color/OceanTextColor</item>
+        <item name="black">@color/OceanPrimaryGrayBackground</item>
+        <item name="colorOnPrimary">@color/OceanTextColor</item>
+    </style>
+
+    <style name="EmberMode">
+        <item name="primaryGrayBackground">@color/EmberPrimaryGrayBackground</item>
+        <item name="primaryBlackBackground">@color/EmberBitDarkerGrayBackground</item>
+        <item name="iconGrayBackground">@color/EmberGrayBackground</item>
+        <item name="boxItemBackground">@color/EmberItemBackground</item>
+        <item name="textColor">@color/EmberTextColor</item>
+        <item name="grayTextColor">@color/EmberGrayTextColor</item>
+        <item name="iconColor">@color/EmberIconColor</item>
+        <item name="white">@color/EmberTextColor</item>
+        <item name="black">@color/EmberPrimaryGrayBackground</item>
+        <item name="colorOnPrimary">@color/EmberTextColor</item>
+    </style>
+
+    <style name="CrimsonMode">
+        <item name="primaryGrayBackground">@color/CrimsonPrimaryGrayBackground</item>
+        <item name="primaryBlackBackground">@color/CrimsonBitDarkerGrayBackground</item>
+        <item name="iconGrayBackground">@color/CrimsonGrayBackground</item>
+        <item name="boxItemBackground">@color/CrimsonItemBackground</item>
+        <item name="textColor">@color/CrimsonTextColor</item>
+        <item name="grayTextColor">@color/CrimsonGrayTextColor</item>
+        <item name="iconColor">@color/CrimsonIconColor</item>
+        <item name="white">@color/CrimsonTextColor</item>
+        <item name="black">@color/CrimsonPrimaryGrayBackground</item>
+        <item name="colorOnPrimary">@color/CrimsonTextColor</item>
+    </style>
+
+    <style name="GraphiteMode">
+        <item name="primaryGrayBackground">@color/GraphitePrimaryGrayBackground</item>
+        <item name="primaryBlackBackground">@color/GraphiteBitDarkerGrayBackground</item>
+        <item name="iconGrayBackground">@color/GraphiteGrayBackground</item>
+        <item name="boxItemBackground">@color/GraphiteItemBackground</item>
+        <item name="textColor">@color/GraphiteTextColor</item>
+        <item name="grayTextColor">@color/GraphiteGrayTextColor</item>
+        <item name="iconColor">@color/GraphiteIconColor</item>
+        <item name="white">@color/GraphiteTextColor</item>
+        <item name="black">@color/GraphitePrimaryGrayBackground</item>
+        <item name="colorOnPrimary">@color/GraphiteTextColor</item>
+    </style>
+
+    <!-- Glass colour variants, only the backdrop and the dark surfaces differ from GlassMode -->
+    <style name="GlassAuroraMode" parent="GlassMode">
+        <item name="android:windowBackground">@drawable/glass_backdrop_aurora</item>
+        <item name="glassWindow">@drawable/glass_backdrop_aurora</item>
+        <item name="glassDialogSurface">@color/AuroraDialog</item>
+        <item name="glassSheetSurface">@color/AuroraSheet</item>
+        <item name="glassBar">@color/AuroraBar</item>
+    </style>
+
+    <style name="GlassSunsetMode" parent="GlassMode">
+        <item name="android:windowBackground">@drawable/glass_backdrop_sunset</item>
+        <item name="glassWindow">@drawable/glass_backdrop_sunset</item>
+        <item name="glassDialogSurface">@color/SunsetGlassDialog</item>
+        <item name="glassSheetSurface">@color/SunsetGlassSheet</item>
+        <item name="glassBar">@color/SunsetGlassBar</item>
+    </style>
+
     <style name="MonetMode">
         <item name="primaryGrayBackground">@color/material_dynamic_neutral20</item>
         <item name="primaryBlackBackground">@color/material_dynamic_neutral10</item>

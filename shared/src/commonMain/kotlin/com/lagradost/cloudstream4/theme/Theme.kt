@@ -38,6 +38,24 @@ enum class CloudStreamThemeMode {
     /** "Glass" Liquid Glass, translucent panels over a gradient backdrop */
     Glass,
 
+    /** "GlassAurora" Liquid Glass with a green and teal backdrop */
+    GlassAurora,
+
+    /** "GlassSunset" Liquid Glass with a magenta and orange backdrop */
+    GlassSunset,
+
+    /** "Ocean" deep teal */
+    Ocean,
+
+    /** "Ember" warm dark brown */
+    Ember,
+
+    /** "Crimson" dark red */
+    Crimson,
+
+    /** "Graphite" neutral dark gray */
+    Graphite,
+
     /** "System" resolved on each platform via [isSystemInDarkTheme] */
     FollowSystem,
 
@@ -64,6 +82,20 @@ fun modeToTheme(mode : CloudStreamThemeMode, primaryColor: CloudStreamPrimaryCol
             CloudStreamThemeMode.Lavender -> lavenderScheme()
             CloudStreamThemeMode.SilentBlue -> silentBlueScheme()
             CloudStreamThemeMode.Glass -> glassScheme()
+            CloudStreamThemeMode.GlassAurora -> glassScheme(Color(0xFF062A2A))
+            CloudStreamThemeMode.GlassSunset -> glassScheme(Color(0xFF220B2B))
+            CloudStreamThemeMode.Ocean -> solidScheme(
+                0xFF08202A, 0xFF10303B, 0xFF17404E, 0xFF123541, 0xFFE4F5F8, 0xFF7FB0BC, 0xFF4FD1E0
+            )
+            CloudStreamThemeMode.Ember -> solidScheme(
+                0xFF1D100C, 0xFF2D1A14, 0xFF3A2219, 0xFF33201A, 0xFFFBEADF, 0xFFC09A86, 0xFFFF9B5E
+            )
+            CloudStreamThemeMode.Crimson -> solidScheme(
+                0xFF170909, 0xFF261112, 0xFF331818, 0xFF2C1415, 0xFFF8E8E8, 0xFFBC8F90, 0xFFFF6B6B
+            )
+            CloudStreamThemeMode.Graphite -> solidScheme(
+                0xFF14171A, 0xFF1F2327, 0xFF2A3035, 0xFF252A2F, 0xFFE8EAED, 0xFF8E959C, 0xFFAEB7C0
+            )
             CloudStreamThemeMode.FollowSystem -> if (systemDark) darkScheme() else lightScheme()
             CloudStreamThemeMode.Dynamic -> dynamicTheme
         }
@@ -132,7 +164,11 @@ fun CloudStreamTheme(
     // We do not provide csColors as a global, because people should use MaterialTheme directly instead
     CompositionLocalProvider(
         LocalSharedInfiniteTransition provides globalTransition,
-        LocalTransparentScreens provides (mode == CloudStreamThemeMode.Glass),
+        LocalTransparentScreens provides (
+            mode == CloudStreamThemeMode.Glass ||
+                mode == CloudStreamThemeMode.GlassAurora ||
+                mode == CloudStreamThemeMode.GlassSunset
+        ),
     ) {
         MaterialTheme(
             colorScheme = csColors.toMaterial3ColorScheme(),
