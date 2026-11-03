@@ -559,7 +559,8 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
         binding?.apply {
             navRailView.isVisible = isNavVisible && isLandscape()
             navView.isVisible = isNavVisible && !isLandscape()
-            findViewById<View>(R.id.nav_fade)?.isVisible = isNavVisible && !isLandscape()
+            findViewById<View>(R.id.nav_fade)?.isVisible =
+                isNavVisible && !isLandscape() && !isLayout(TV or EMULATOR)
             navHostFragment.apply {
                 val marginPx = resources.getDimensionPixelSize(R.dimen.nav_rail_view_width)
                 layoutParams =
