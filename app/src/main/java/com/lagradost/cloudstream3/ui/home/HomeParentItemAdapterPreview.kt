@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.Observer
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
@@ -562,8 +563,33 @@ class HomeParentItemAdapterPreview(
                 }
             }
 
+        /**
+         * The browse tiles listen to the home page next to HomeFragment. The usual `observe`
+         * helper keeps only ONE observer per value and would delete the fragment's own one,
+         * which left the loading skeleton on screen forever. This adds a second observer instead.
+         */
+        private var tilesObserver: Observer<Resource<Map<String, HomeViewModel.ExpandableHomepageList>>>? =
+            null
+
+        private fun removeTilesObserver() {
+            tilesObserver?.let { viewModel.page.removeObserver(it) }
+            tilesObserver = null
+        }
+
+        private fun addTilesObserver() {
+            val owner = itemView.findViewTreeLifecycleOwner() ?: return
+            removeTilesObserver()
+            val observer =
+                Observer<Resource<Map<String, HomeViewModel.ExpandableHomepageList>>> {
+                    updateBrowseTiles(it)
+                }
+            tilesObserver = observer
+            viewModel.page.observe(owner, observer)
+        }
+
         fun onViewDetachedFromWindow() {
             previewViewpager.unregisterOnPageChangeCallback(previewCallback)
+            removeTilesObserver()
         }
 
         private val toggleList = listOf<Pair<Chip, WatchType>>(
@@ -855,6 +881,7 @@ class HomeParentItemAdapterPreview(
 
         fun onViewAttachedToWindow() {
             previewViewpager.registerOnPageChangeCallback(previewCallback)
+            addTilesObserver()
 
             previewViewpager.apply {
                 observe(viewModel.preview) {
@@ -866,9 +893,6 @@ class HomeParentItemAdapterPreview(
                         binding.homePreviewReloadProvider.isGone = (name == noneApi.name)
                     }
                 }*/
-                observe(viewModel.page) {
-                    updateBrowseTiles(it)
-                }
                 observe(viewModel.resumeWatching) {
                     updateResume(it)
                 }

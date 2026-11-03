@@ -1,0 +1,79 @@
+From 69774ee5388ca22b27dece953b72abb327c2fc72 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 3 Nov 2026 18:43:31 -0500
+Subject: [PATCH] Fix home skeleton stuck: browse tiles deleted the fragment's
+ page observer
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014qZCVttpTLPabm2EDtLLMw
+---
+ .../ui/home/HomeParentItemAdapterPreview.kt   | 30 +++++++++++++++++--
+ 1 file changed, 27 insertions(+), 3 deletions(-)
+
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/ui/home/HomeParentItemAdapterPreview.kt b/app/src/main/java/com/lagradost/cloudstream3/ui/home/HomeParentItemAdapterPreview.kt
+index b589c78..4ee7c8d 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/ui/home/HomeParentItemAdapterPreview.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/ui/home/HomeParentItemAdapterPreview.kt
+@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
+ import androidx.core.view.isGone
+ import androidx.core.view.isVisible
+ import androidx.lifecycle.LifecycleOwner
++import androidx.lifecycle.Observer
+ import androidx.lifecycle.findViewTreeLifecycleOwner
+ import androidx.recyclerview.widget.RecyclerView
+ import androidx.viewbinding.ViewBinding
+@@ -562,8 +563,33 @@ class HomeParentItemAdapterPreview(
+                 }
+             }
+ 
++        /**
++         * The browse tiles listen to the home page next to HomeFragment. The usual `observe`
++         * helper keeps only ONE observer per value and would delete the fragment's own one,
++         * which left the loading skeleton on screen forever. This adds a second observer instead.
++         */
++        private var tilesObserver: Observer<Resource<Map<String, HomeViewModel.ExpandableHomepageList>>>? =
++            null
++
++        private fun removeTilesObserver() {
++            tilesObserver?.let { viewModel.page.removeObserver(it) }
++            tilesObserver = null
++        }
++
++        private fun addTilesObserver() {
++            val owner = itemView.findViewTreeLifecycleOwner() ?: return
++            removeTilesObserver()
++            val observer =
++                Observer<Resource<Map<String, HomeViewModel.ExpandableHomepageList>>> {
++                    updateBrowseTiles(it)
++                }
++            tilesObserver = observer
++            viewModel.page.observe(owner, observer)
++        }
++
+         fun onViewDetachedFromWindow() {
+             previewViewpager.unregisterOnPageChangeCallback(previewCallback)
++            removeTilesObserver()
+         }
+ 
+         private val toggleList = listOf<Pair<Chip, WatchType>>(
+@@ -855,6 +881,7 @@ class HomeParentItemAdapterPreview(
+ 
+         fun onViewAttachedToWindow() {
+             previewViewpager.registerOnPageChangeCallback(previewCallback)
++            addTilesObserver()
+ 
+             previewViewpager.apply {
+                 observe(viewModel.preview) {
+@@ -866,9 +893,6 @@ class HomeParentItemAdapterPreview(
+                         binding.homePreviewReloadProvider.isGone = (name == noneApi.name)
+                     }
+                 }*/
+-                observe(viewModel.page) {
+-                    updateBrowseTiles(it)
+-                }
+                 observe(viewModel.resumeWatching) {
+                     updateResume(it)
+                 }
+-- 
+2.43.0
+
