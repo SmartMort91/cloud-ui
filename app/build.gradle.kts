@@ -242,6 +242,9 @@ dependencies {
 
     // Android Core & Lifecycle
     implementation(libs.core.ktx)
+    // Installs the bundled baseline profile (src/main/baseline-prof.txt) so a freshly installed
+    // build starts fast instead of running uncompiled code until Android optimizes it
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
     implementation(libs.activity.ktx)
     implementation(libs.annotation)
     implementation(libs.appcompat)

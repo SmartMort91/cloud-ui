@@ -29,6 +29,7 @@ import com.lagradost.cloudstream3.R
 import com.lagradost.cloudstream3.SearchQuality
 import com.lagradost.cloudstream3.mvvm.safe
 import com.lagradost.cloudstream3.ui.FloatingNav
+import com.lagradost.cloudstream3.ui.StartupTimer
 import com.lagradost.cloudstream3.ui.UiPrefs
 import com.lagradost.cloudstream3.ui.subtitles.SUBTITLE_AUTO_SELECT_KEY
 import com.lagradost.cloudstream3.ui.subtitles.SubtitlesFragment
@@ -140,6 +141,7 @@ object SettingsUIScreen : SearchableSettings {
         val focusTitle = stringResource(R.string.ui_focus_style_settings)
         val switcherTitle = stringResource(R.string.ui_provider_switcher_settings)
         val floatTitle = stringResource(R.string.ui_floating_nav_settings)
+        val timingTitle = stringResource(R.string.ui_startup_timing_settings)
 
         val subLangTitle = stringResource(R.string.subs_auto_select_language)
         val noneLabel = stringResource(R.string.none)
@@ -259,6 +261,18 @@ object SettingsUIScreen : SearchableSettings {
                             UiPrefs.putOpt(FloatingNav.OPTION, it)
                             safe { activity?.recreate() }
                         }
+                    }
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = timingTitle,
+                    subtitle = label(
+                        onOffNames, onOffValues, UiPrefs.getOpt(StartupTimer.OPTION, "off")
+                    ),
+                    onClick = {
+                        pick(
+                            timingTitle, onOffNames, onOffValues,
+                            UiPrefs.getOpt(StartupTimer.OPTION, "off")
+                        ) { UiPrefs.putOpt(StartupTimer.OPTION, it) }
                     }
                 ),
                 Preference.PreferenceItem.TextPreference(

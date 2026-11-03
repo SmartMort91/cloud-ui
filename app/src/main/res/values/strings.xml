@@ -421,6 +421,7 @@
     <string name="ui_focus_border">Outline only</string>
     <string name="ui_provider_switcher_settings">Provider switcher</string>
     <string name="ui_floating_nav_settings">Floating nav bar</string>
+    <string name="ui_startup_timing_settings">Startup timing (shows how long launch steps take)</string>
     <string name="ui_switcher_on">On</string>
     <string name="ui_switcher_off">Off</string>
     <string name="ui_switch_provider_title">Watch on another provider</string>

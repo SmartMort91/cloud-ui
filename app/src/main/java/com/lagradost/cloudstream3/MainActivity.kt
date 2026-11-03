@@ -1334,6 +1334,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
         binding?.homeRoot?.setPadding(padding, padding, padding, padding)
 
         changeStatusBarState(isLayout(EMULATOR))
+        com.lagradost.cloudstream3.ui.StartupTimer.install()
 
         /** Biometric stuff for users without accounts **/
         val noAccounts = settingsManager.getBoolean(

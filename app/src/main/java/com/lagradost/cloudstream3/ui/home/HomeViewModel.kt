@@ -361,6 +361,7 @@ class HomeViewModel : ViewModel() {
 
                     // Show the rows right away, loading the hero titles can be slow
                     _page.postValue(Resource.Success(expandable))
+                    com.lagradost.cloudstream3.ui.StartupTimer.mark("rows")
 
                     val items = data.value.mapNotNull { it?.items }.flatten()
 
@@ -371,6 +372,9 @@ class HomeViewModel : ViewModel() {
                     // the rows back. If they take too long the hero is skipped for now and
                     // appears as soon as it is ready.
                     addJob = ioSafe {
+                        // Let the rows draw and the plugins finish before the hero titles start
+                        // their own network requests, so they do not compete at launch
+                        delay(500)
                         val timer = launch {
                             delay(6000)
                             if (_preview.value is Resource.Loading) {
@@ -407,6 +411,7 @@ class HomeViewModel : ViewModel() {
                             } else {
                                 _preview.postValue(Resource.Success((previewResponsesAdded.size < currentShuffledList.size) to previewResponses))
                             }
+                            com.lagradost.cloudstream3.ui.StartupTimer.mark("hero")
                         } finally {
                             timer.cancel()
                         }

@@ -32,6 +32,8 @@ Branding: the app calls itself "CloudStream Custom" (`app/src/prerelease/res/val
 | --- | --- |
 | `ui/UiPrefs.kt` | Per-profile options: search provider, home style, tiles, focus style, provider switcher, floating nav |
 | `ui/FloatingNav.kt` | Phone nav bar that floats over the page (see below) |
+| `ui/StartupTimer.kt` | Optional launch timing toast (Settings > Layout > Startup timing): window, plugins, home rows, hero |
+| `app/src/main/baseline-prof.txt` | Baseline profile so a fresh install starts compiled (needs `androidx.profileinstaller` in `app/build.gradle.kts`) |
 | `ui/home/HomeBrowse.kt` + `layout/browse_sheet.xml`, `browse_chip.xml` | Home category tiles and the browse sheet |
 | `ui/result/ProviderSwitcher.kt` | Result page dropdown to open the same title on another provider |
 | `ui/search/TopCropImageView.kt` | Banner image view that crops toward the top, used by `search_result_grid*.xml` |
@@ -94,6 +96,13 @@ The glass colour variants only override the backdrop and `glassDialogSurface`, `
 (`parent="GlassMode"`).
 Compose: `LocalTransparentScreens` (set for all glass modes) makes `Scaffold` transparent; the glass scheme
 keeps an opaque `background` because dialogs and button text use it.
+
+### Startup speed
+A freshly installed APK runs uncompiled code until Android optimizes it, which made the first launches
+laggy compared with an app installed for days. `baseline-prof.txt` marks the app's code for compile at
+install. If the build ever fails in `compileReleaseArtProfile`, delete that file, nothing else depends on it.
+Home loads the rows first, the hero titles start 500 ms later in the background.
+Turn on Startup timing to see where a slow launch spends its time.
 
 ### Search
 Banner search with a single provider (`UiPrefs.searchProvider`), live search while typing, on-screen keyboard on

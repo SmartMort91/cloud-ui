@@ -1,0 +1,5 @@
+# Baseline profile: tells Android to precompile the app's own code at install time.
+# Without it a freshly installed build runs uncompiled code (slow launch, laggy first home load)
+# until the system optimizes it in the background, which can take hours.
+HSPLcom/lagradost/**;->**(**)**
+Lcom/lagradost/**;
