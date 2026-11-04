@@ -98,6 +98,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          # Full history, the release notes list what changed since the previous release
+          fetch-depth: 0
           ref: ${{ github.event_name == 'push' && github.sha || 'main' }}
 
       - name: Set up JDK 17
@@ -136,12 +138,25 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           SHA=$(git rev-parse HEAD)
+
+          # Release notes: the commit messages since the previous release. The app shows this
+          # text in its update popup, so keep it readable.
+          PREV=$(gh release view pre-release --json targetCommitish --jq .targetCommitish 2>/dev/null || true)
+          if [ -n "$PREV" ] && git cat-file -e "$PREV^{commit}" 2>/dev/null && [ "$PREV" != "$SHA" ]; then
+            RANGE="$PREV..$SHA"
+          else
+            RANGE="-n 10 $SHA"
+          fi
+          CHANGES=$(git log --no-merges --format='- %s' $RANGE | head -n 25)
+          [ -n "$CHANGES" ] || CHANGES="- Rebuilt with no new changes"
+          printf 'What changed:\n%s\n\nBuilt from commit %s.\n' "$CHANGES" "${SHA:0:7}" > release-notes.md
+
           gh release delete pre-release --cleanup-tag --yes || true
           gh release create pre-release app/build/outputs/apk/prerelease/release/*.apk \
             --target "$SHA" \
             --latest \
             --title "Custom build" \
-            --notes "Built from commit $SHA. Install the APK. Installed copies update themselves from new releases here."
+            --notes-file release-notes.md
 
       - name: Keep a copy of the APK
         uses: actions/upload-artifact@v7
