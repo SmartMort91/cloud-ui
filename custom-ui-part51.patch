@@ -1,0 +1,26 @@
+From 15c24afd6192a36bf76971b98effc056b53f4084 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 4 Nov 2026 12:51:27 -0500
+Subject: [PATCH] Enable resValues so the beta app label can be generated
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014qZCVttpTLPabm2EDtLLMw
+---
+ app/build.gradle.kts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/app/build.gradle.kts b/app/build.gradle.kts
+index 8598c03..d110b8b 100644
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -219,6 +219,7 @@ android {
+ 
+     buildFeatures {
+         buildConfig = true
++        resValues = true
+         viewBinding = true
+     }
+ 
+-- 
+2.43.0
+
