@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Base64
 import android.text.InputType
+import com.lagradost.cloudstream3.BuildConfig
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.getKey
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.setKey
 import com.lagradost.cloudstream3.CommonActivity.showToast
@@ -22,7 +23,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.net.URLEncoder
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
@@ -151,7 +151,10 @@ object CustomCollections {
     // ----- Sharing -----
 
     const val LINK_SCHEME = "cscollection"
-    private val linkRegex = Regex("""cscollection(?:://|%3A%2F%2F)([A-Za-z0-9_-]+)""", RegexOption.IGNORE_CASE)
+    private val linkRegex = Regex(
+        """cscollection(?:://|%3A%2F%2F)([A-Za-z0-9_-]+)|\.github\.io/[^\s?]*\?c=([A-Za-z0-9_-]+)""",
+        RegexOption.IGNORE_CASE
+    )
 
     /** Compact gzip + base64url encoding so a whole collection fits in a link */
     fun encodeLink(c: Collection): String {
@@ -180,7 +183,8 @@ object CustomCollections {
 
     /** Finds a collection link anywhere in [text] (raw link or the https redirect form) */
     fun decodeLink(text: String): Collection? {
-        val payload = linkRegex.find(text)?.groupValues?.getOrNull(1) ?: return null
+        val m = linkRegex.find(text) ?: return null
+        val payload = (m.groupValues[1].ifEmpty { m.groupValues[2] }).ifEmpty { return null }
         return runCatching {
             val bytes = Base64.decode(payload, Base64.URL_SAFE or Base64.NO_WRAP)
             val json = GZIPInputStream(ByteArrayInputStream(bytes)).use {
@@ -222,8 +226,9 @@ object CustomCollections {
 
     fun Activity.shareCollection(c: Collection) {
         val link = encodeLink(c)
-        val redirect = "https://recloudstream.github.io/csredirect?redirectto=" +
-            URLEncoder.encode(link, "UTF-8")
+        // Tiny redirect page in this repo's own GitHub Pages (docs/index.html)
+        val redirect = "https://${BuildConfig.UPDATE_REPO_OWNER.lowercase()}.github.io/" +
+            "${BuildConfig.UPDATE_REPO_NAME}/?c=${link.substringAfter("://")}"
         val text = getString(R.string.collection_share_text, c.name, c.items.size) +
             "\n" + redirect + "\n\n" +
             getString(R.string.collection_share_fallback) + "\n" + link

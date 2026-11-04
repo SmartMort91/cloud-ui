@@ -66,7 +66,7 @@ is Off. If a page has a bottom element hidden behind the pill, it is probably no
   delete, share, import).
 * Sharing: `encodeLink`/`decodeLink` turn a collection into `cscollection://<gzip+base64url JSON>`. The manifest has a
   `cscollection` intent filter and `MainActivity.handleAppIntent` calls `importFromText`. The share text also
-  contains an `https://recloudstream.github.io/csredirect?redirectto=...` link (tappable in chat apps) and the raw link
+  contains an `https://<owner>.github.io/<repo>/?c=...` link (tappable in chat apps; served from `docs/index.html` via GitHub Pages, which must be enabled once: Settings > Pages > main /docs) and the raw link
   for pasting via Library > Collections > Import from link. Imports ask first and rename on name clashes.
 
 ### Themes
