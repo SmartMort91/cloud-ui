@@ -49,7 +49,8 @@ object ApkUpdater : AppUpdater {
             val length = length ?: body.contentLength()
             val readStream = body.byteStream()
 
-            when (settings.updates.apkInstaller.get()) {
+            // Custom fork: session installer fails with "App not installed" on some devices.
+            when (if (settings.updates.apkInstaller.get() == 0) 1 else settings.updates.apkInstaller.get()) {
                 0 -> {
                     packageInstallerDownloader(
                         activity,

@@ -29,8 +29,6 @@ import com.lagradost.cloudstream3.ui.settings.ApkUpdater
 import com.lagradost.cloudstream3.ui.settings.GithubReleases
 import com.lagradost.cloudstream3.ui.settings.GithubReleases.APK_CONTENT_TYPE
 import com.lagradost.cloudstream3.ui.settings.GithubReleases.APK_PRERELEASE
-import com.lagradost.cloudstream3.ui.settings.GithubReleases.APK_REPOSITORY
-import com.lagradost.cloudstream3.ui.settings.GithubReleases.APK_USERNAME
 import com.lagradost.cloudstream3.utils.GitInfo.currentCommitHash
 import com.lagradost.cloudstream3.utils.parseMarkdown
 import com.lagradost.cloudstream4.compose.BlackButton
@@ -58,8 +56,8 @@ object MainActivityScreen : Screen {
         val settings = rememberAppSettings()
         return viewModel(viewModelStoreOwner = activity) {
             GithubViewModel(
-                remoteUserName = APK_USERNAME,
-                remoteRepository = APK_REPOSITORY,
+                remoteUserName = BuildConfig.UPDATE_REPO_OWNER,
+                remoteRepository = BuildConfig.UPDATE_REPO_NAME,
                 remotePrereleaseTag = APK_PRERELEASE,
                 remoteContentType = APK_CONTENT_TYPE,
                 versionName = BuildConfig.VERSION_NAME,
