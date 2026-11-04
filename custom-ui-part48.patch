@@ -1,0 +1,267 @@
+From f38a2cd3002f36a5523257182ee707230aec3e80 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 4 Nov 2026 09:19:21 -0500
+Subject: [PATCH] Collections: share and import via cscollection links
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014qZCVttpTLPabm2EDtLLMw
+---
+ CUSTOM_UI.md                                  |   6 +-
+ app/src/main/AndroidManifest.xml              |   9 ++
+ .../lagradost/cloudstream3/MainActivity.kt    |   4 +
+ .../cloudstream3/utils/CustomCollections.kt   | 130 +++++++++++++++++-
+ app/src/main/res/values/strings.xml           |   7 +
+ 5 files changed, 153 insertions(+), 3 deletions(-)
+
+diff --git a/CUSTOM_UI.md b/CUSTOM_UI.md
+index 03b6c58..a632816 100644
+--- a/CUSTOM_UI.md
++++ b/CUSTOM_UI.md
+@@ -63,7 +63,11 @@ is Off. If a page has a bottom element hidden behind the pill, it is probably no
+ * The bookmark dialog (`ResultFragmentPhone`, `ResultFragmentTv`) has a last row "Add to collection..." that
+   opens `showCollectionPicker`. `ResultViewModel2.collectionItem()` builds the stored snapshot.
+ * `fragment_library.xml` and `fragment_library_tv.xml` have the `library_collections` button (create, rename,
+-  delete).
++  delete, share, import).
++* Sharing: `encodeLink`/`decodeLink` turn a collection into `cscollection://<gzip+base64url JSON>`. The manifest has a
++  `cscollection` intent filter and `MainActivity.handleAppIntent` calls `importFromText`. The share text also
++  contains an `https://recloudstream.github.io/csredirect?redirectto=...` link (tappable in chat apps) and the raw link
++  for pasting via Library > Collections > Import from link. Imports ask first and rename on name clashes.
+ 
+ ### Themes
+ Android side: `res/values/colors.xml` (palette), `styles.xml` (`*Mode` styles), `array.xml` plus the four
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index 3ff5951..f234dbe 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -208,6 +208,15 @@
+ 
+                 <data android:scheme="csshare" />
+             </intent-filter>
++            <!-- Shared custom collections: cscollection://... -->
++            <intent-filter>
++                <action android:name="android.intent.action.VIEW" />
++
++                <category android:name="android.intent.category.DEFAULT" />
++                <category android:name="android.intent.category.BROWSABLE" />
++
++                <data android:scheme="cscollection" />
++            </intent-filter>
+             <!-- Allow searching with intents: cloudstreamsearch://Your%20Name -->
+             <intent-filter>
+                 <action android:name="android.intent.action.VIEW" />
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/MainActivity.kt b/app/src/main/java/com/lagradost/cloudstream3/MainActivity.kt
+index 19b1ad4..2b747c8 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/MainActivity.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/MainActivity.kt
+@@ -126,6 +126,7 @@ import com.lagradost.cloudstream3.ui.settings.SettingsGeneral
+ import com.lagradost.cloudstream3.ui.setup.HAS_DONE_SETUP_KEY
+ import com.lagradost.cloudstream3.ui.setup.SetupFragmentExtensions
+ import com.lagradost.cloudstream3.utils.ApkInstaller
++import com.lagradost.cloudstream3.utils.CustomCollections
+ import com.lagradost.cloudstream3.utils.AppContextUtils.getApiDubstatusSettings
+ import com.lagradost.cloudstream3.utils.AppContextUtils.html
+ import com.lagradost.cloudstream3.utils.AppContextUtils.isCastApiAvailable
+@@ -298,6 +299,9 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
+                         println("Repository url: $realUrl")
+                         loadRepository(realUrl)
+                         return true
++                    } else if (str.startsWith("${CustomCollections.LINK_SCHEME}:")) {
++                        activity?.let { a -> with(CustomCollections) { a.importFromText(str) } }
++                        return true
+                     } else if (str.contains(APP_STRING)) {
+                         for (api in AccountManager.allApis) {
+                             if (api.isValidRedirectUrl(str)) {
+diff --git a/app/src/main/java/com/lagradost/cloudstream3/utils/CustomCollections.kt b/app/src/main/java/com/lagradost/cloudstream3/utils/CustomCollections.kt
+index 349ed2c..9ed5769 100644
+--- a/app/src/main/java/com/lagradost/cloudstream3/utils/CustomCollections.kt
++++ b/app/src/main/java/com/lagradost/cloudstream3/utils/CustomCollections.kt
+@@ -1,6 +1,10 @@
+ package com.lagradost.cloudstream3.utils
+ 
+ import android.app.Activity
++import android.content.ClipboardManager
++import android.content.Context
++import android.content.Intent
++import android.util.Base64
+ import android.text.InputType
+ import com.lagradost.cloudstream3.CloudStreamApp.Companion.getKey
+ import com.lagradost.cloudstream3.CloudStreamApp.Companion.setKey
+@@ -16,6 +20,11 @@ import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showMultiDialog
+ import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showNginxTextInputDialog
+ import org.json.JSONArray
+ import org.json.JSONObject
++import java.io.ByteArrayInputStream
++import java.io.ByteArrayOutputStream
++import java.net.URLEncoder
++import java.util.zip.GZIPInputStream
++import java.util.zip.GZIPOutputStream
+ 
+ /**
+  * User made named collections ("Horror Night", "All-Time Favorites", ...).
+@@ -139,6 +148,118 @@ object CustomCollections {
+         })
+     }
+ 
++    // ----- Sharing -----
++
++    const val LINK_SCHEME = "cscollection"
++    private val linkRegex = Regex("""cscollection(?:://|%3A%2F%2F)([A-Za-z0-9_-]+)""", RegexOption.IGNORE_CASE)
++
++    /** Compact gzip + base64url encoding so a whole collection fits in a link */
++    fun encodeLink(c: Collection): String {
++        val root = JSONObject()
++        root.put("n", c.name)
++        root.put("i", JSONArray().also { arr ->
++            c.items.forEach { i ->
++                arr.put(JSONArray().apply {
++                    put(i.id)
++                    put(i.name)
++                    put(i.url)
++                    put(i.apiName)
++                    put(i.type ?: JSONObject.NULL)
++                    put(i.posterUrl ?: JSONObject.NULL)
++                    put(i.year ?: JSONObject.NULL)
++                })
++            }
++        })
++        val bos = ByteArrayOutputStream()
++        GZIPOutputStream(bos).use { it.write(root.toString().toByteArray(Charsets.UTF_8)) }
++        val b64 = Base64.encodeToString(
++            bos.toByteArray(), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
++        )
++        return "$LINK_SCHEME://$b64"
++    }
++
++    /** Finds a collection link anywhere in [text] (raw link or the https redirect form) */
++    fun decodeLink(text: String): Collection? {
++        val payload = linkRegex.find(text)?.groupValues?.getOrNull(1) ?: return null
++        return runCatching {
++            val bytes = Base64.decode(payload, Base64.URL_SAFE or Base64.NO_WRAP)
++            val json = GZIPInputStream(ByteArrayInputStream(bytes)).use {
++                String(it.readBytes(), Charsets.UTF_8)
++            }
++            val root = JSONObject(json)
++            val arr = root.getJSONArray("i")
++            val now = System.currentTimeMillis()
++            Collection(
++                "",
++                root.getString("n"),
++                (0 until arr.length()).map { idx ->
++                    val a = arr.getJSONArray(idx)
++                    Item(
++                        a.getInt(0),
++                        a.getString(1),
++                        a.getString(2),
++                        a.getString(3),
++                        if (a.isNull(4)) null else a.getString(4),
++                        if (a.isNull(5)) null else a.getString(5),
++                        if (a.isNull(6)) null else a.getInt(6),
++                        now,
++                    )
++                }
++            )
++        }.getOrNull()
++    }
++
++    /** Adds [incoming] as a new collection, renaming it if the name is already used */
++    fun importCollection(incoming: Collection): Collection {
++        var name = incoming.name.trim().ifBlank { "Shared collection" }
++        var n = 2
++        val base = name
++        while (nameTaken(name)) name = "$base (${n++})"
++        val c = Collection(System.currentTimeMillis().toString(), name, incoming.items)
++        save(getAll() + c)
++        return c
++    }
++
++    fun Activity.shareCollection(c: Collection) {
++        val link = encodeLink(c)
++        val redirect = "https://recloudstream.github.io/csredirect?redirectto=" +
++            URLEncoder.encode(link, "UTF-8")
++        val text = getString(R.string.collection_share_text, c.name, c.items.size) +
++            "\n" + redirect + "\n\n" +
++            getString(R.string.collection_share_fallback) + "\n" + link
++        val i = Intent(Intent.ACTION_SEND)
++        i.type = "text/plain"
++        i.putExtra(Intent.EXTRA_SUBJECT, c.name)
++        i.putExtra(Intent.EXTRA_TEXT, text)
++        startActivity(Intent.createChooser(i, c.name))
++    }
++
++    /** Parses [text] and asks before importing. Returns true if it was a collection link. */
++    fun Activity.importFromText(text: String?, silentIfInvalid: Boolean = false): Boolean {
++        val parsed = text?.let { decodeLink(it) }
++        if (parsed == null) {
++            if (!silentIfInvalid) showToast(R.string.collection_import_invalid)
++            return false
++        }
++        showBottomDialog(
++            listOf(getString(R.string.collection_import_confirm, parsed.name, parsed.items.size)),
++            -1,
++            getString(R.string.collections_title),
++            false,
++            {}
++        ) {
++            val c = importCollection(parsed)
++            showToast(getString(R.string.collection_imported, c.name))
++        }
++        return true
++    }
++
++    fun Activity.importFromClipboard() {
++        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
++        val text = cm?.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(this)
++        importFromText(text?.toString())
++    }
++
+     // ----- UI -----
+ 
+     private fun Activity.askName(title: String, initial: String, onName: (String) -> Unit) {
+@@ -182,12 +303,15 @@ object CustomCollections {
+             getString(R.string.collection_new),
+             getString(R.string.collection_rename),
+             getString(R.string.collection_delete),
++            getString(R.string.collection_share),
++            getString(R.string.collection_import),
+         )
+         showBottomDialog(actions, -1, getString(R.string.collections_title), false, {}) { which ->
+             val cols = getAll()
+             when (which) {
+                 0 -> promptCreate()
+-                1, 2 -> {
++                4 -> importFromClipboard()
++                1, 2, 3 -> {
+                     if (cols.isEmpty()) {
+                         showToast(R.string.collections_none)
+                         return@showBottomDialog
+@@ -196,7 +320,9 @@ object CustomCollections {
+                         cols.map { it.name }, -1, actions[which], false, {}
+                     ) { index ->
+                         val c = cols.getOrNull(index) ?: return@showBottomDialog
+-                        if (which == 1) {
++                        if (which == 3) {
++                            shareCollection(c)
++                        } else if (which == 1) {
+                             askName(actions[1], c.name) { text ->
+                                 if (!rename(c.id, text)) showToast(R.string.collection_name_invalid)
+                             }
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 1e444b6..e89e170 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -855,4 +855,11 @@
+     <string name="collection_delete_confirm">Delete \"%1$s\"? Titles stay in your library.</string>
+     <string name="collection_name_invalid">Enter a name that is not already used</string>
+     <string name="collections_none">No collections yet</string>
++    <string name="collection_share">Share collection</string>
++    <string name="collection_import">Import from link</string>
++    <string name="collection_share_text">%1$s — a CloudStream collection with %2$d titles. Open this link on a phone with CloudStream Custom:</string>
++    <string name="collection_share_fallback">If the link is not tappable, copy this whole line and use Library &gt; Collections &gt; Import from link:</string>
++    <string name="collection_import_confirm">Import \"%1$s\" (%2$d titles)</string>
++    <string name="collection_import_invalid">No valid collection link found. Copy the link first, then try again.</string>
++    <string name="collection_imported">Imported \"%1$s\"</string>
+ </resources>
+-- 
+2.43.0
+

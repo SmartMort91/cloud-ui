@@ -63,7 +63,11 @@ is Off. If a page has a bottom element hidden behind the pill, it is probably no
 * The bookmark dialog (`ResultFragmentPhone`, `ResultFragmentTv`) has a last row "Add to collection..." that
   opens `showCollectionPicker`. `ResultViewModel2.collectionItem()` builds the stored snapshot.
 * `fragment_library.xml` and `fragment_library_tv.xml` have the `library_collections` button (create, rename,
-  delete).
+  delete, share, import).
+* Sharing: `encodeLink`/`decodeLink` turn a collection into `cscollection://<gzip+base64url JSON>`. The manifest has a
+  `cscollection` intent filter and `MainActivity.handleAppIntent` calls `importFromText`. The share text also
+  contains an `https://recloudstream.github.io/csredirect?redirectto=...` link (tappable in chat apps) and the raw link
+  for pasting via Library > Collections > Import from link. Imports ask first and rename on name clashes.
 
 ### Themes
 Android side: `res/values/colors.xml` (palette), `styles.xml` (`*Mode` styles), `array.xml` plus the four

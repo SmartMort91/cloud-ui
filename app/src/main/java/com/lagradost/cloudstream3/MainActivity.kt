@@ -126,6 +126,7 @@ import com.lagradost.cloudstream3.ui.settings.SettingsGeneral
 import com.lagradost.cloudstream3.ui.setup.HAS_DONE_SETUP_KEY
 import com.lagradost.cloudstream3.ui.setup.SetupFragmentExtensions
 import com.lagradost.cloudstream3.utils.ApkInstaller
+import com.lagradost.cloudstream3.utils.CustomCollections
 import com.lagradost.cloudstream3.utils.AppContextUtils.getApiDubstatusSettings
 import com.lagradost.cloudstream3.utils.AppContextUtils.html
 import com.lagradost.cloudstream3.utils.AppContextUtils.isCastApiAvailable
@@ -297,6 +298,9 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                         val realUrl = "https://" + str.substringAfter("?")
                         println("Repository url: $realUrl")
                         loadRepository(realUrl)
+                        return true
+                    } else if (str.startsWith("${CustomCollections.LINK_SCHEME}:")) {
+                        activity?.let { a -> with(CustomCollections) { a.importFromText(str) } }
                         return true
                     } else if (str.contains(APP_STRING)) {
                         for (api in AccountManager.allApis) {

@@ -208,6 +208,15 @@
 
                 <data android:scheme="csshare" />
             </intent-filter>
+            <!-- Shared custom collections: cscollection://... -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="cscollection" />
+            </intent-filter>
             <!-- Allow searching with intents: cloudstreamsearch://Your%20Name -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

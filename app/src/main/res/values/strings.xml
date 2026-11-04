@@ -855,4 +855,11 @@
     <string name="collection_delete_confirm">Delete \"%1$s\"? Titles stay in your library.</string>
     <string name="collection_name_invalid">Enter a name that is not already used</string>
     <string name="collections_none">No collections yet</string>
+    <string name="collection_share">Share collection</string>
+    <string name="collection_import">Import from link</string>
+    <string name="collection_share_text">%1$s — a CloudStream collection with %2$d titles. Open this link on a phone with CloudStream Custom:</string>
+    <string name="collection_share_fallback">If the link is not tappable, copy this whole line and use Library &gt; Collections &gt; Import from link:</string>
+    <string name="collection_import_confirm">Import \"%1$s\" (%2$d titles)</string>
+    <string name="collection_import_invalid">No valid collection link found. Copy the link first, then try again.</string>
+    <string name="collection_imported">Imported \"%1$s\"</string>
 </resources>

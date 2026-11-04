@@ -1,6 +1,10 @@
 package com.lagradost.cloudstream3.utils
 
 import android.app.Activity
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.util.Base64
 import android.text.InputType
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.getKey
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.setKey
@@ -16,6 +20,11 @@ import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showMultiDialog
 import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showNginxTextInputDialog
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.net.URLEncoder
+import java.util.zip.GZIPInputStream
+import java.util.zip.GZIPOutputStream
 
 /**
  * User made named collections ("Horror Night", "All-Time Favorites", ...).
@@ -139,6 +148,118 @@ object CustomCollections {
         })
     }
 
+    // ----- Sharing -----
+
+    const val LINK_SCHEME = "cscollection"
+    private val linkRegex = Regex("""cscollection(?:://|%3A%2F%2F)([A-Za-z0-9_-]+)""", RegexOption.IGNORE_CASE)
+
+    /** Compact gzip + base64url encoding so a whole collection fits in a link */
+    fun encodeLink(c: Collection): String {
+        val root = JSONObject()
+        root.put("n", c.name)
+        root.put("i", JSONArray().also { arr ->
+            c.items.forEach { i ->
+                arr.put(JSONArray().apply {
+                    put(i.id)
+                    put(i.name)
+                    put(i.url)
+                    put(i.apiName)
+                    put(i.type ?: JSONObject.NULL)
+                    put(i.posterUrl ?: JSONObject.NULL)
+                    put(i.year ?: JSONObject.NULL)
+                })
+            }
+        })
+        val bos = ByteArrayOutputStream()
+        GZIPOutputStream(bos).use { it.write(root.toString().toByteArray(Charsets.UTF_8)) }
+        val b64 = Base64.encodeToString(
+            bos.toByteArray(), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
+        )
+        return "$LINK_SCHEME://$b64"
+    }
+
+    /** Finds a collection link anywhere in [text] (raw link or the https redirect form) */
+    fun decodeLink(text: String): Collection? {
+        val payload = linkRegex.find(text)?.groupValues?.getOrNull(1) ?: return null
+        return runCatching {
+            val bytes = Base64.decode(payload, Base64.URL_SAFE or Base64.NO_WRAP)
+            val json = GZIPInputStream(ByteArrayInputStream(bytes)).use {
+                String(it.readBytes(), Charsets.UTF_8)
+            }
+            val root = JSONObject(json)
+            val arr = root.getJSONArray("i")
+            val now = System.currentTimeMillis()
+            Collection(
+                "",
+                root.getString("n"),
+                (0 until arr.length()).map { idx ->
+                    val a = arr.getJSONArray(idx)
+                    Item(
+                        a.getInt(0),
+                        a.getString(1),
+                        a.getString(2),
+                        a.getString(3),
+                        if (a.isNull(4)) null else a.getString(4),
+                        if (a.isNull(5)) null else a.getString(5),
+                        if (a.isNull(6)) null else a.getInt(6),
+                        now,
+                    )
+                }
+            )
+        }.getOrNull()
+    }
+
+    /** Adds [incoming] as a new collection, renaming it if the name is already used */
+    fun importCollection(incoming: Collection): Collection {
+        var name = incoming.name.trim().ifBlank { "Shared collection" }
+        var n = 2
+        val base = name
+        while (nameTaken(name)) name = "$base (${n++})"
+        val c = Collection(System.currentTimeMillis().toString(), name, incoming.items)
+        save(getAll() + c)
+        return c
+    }
+
+    fun Activity.shareCollection(c: Collection) {
+        val link = encodeLink(c)
+        val redirect = "https://recloudstream.github.io/csredirect?redirectto=" +
+            URLEncoder.encode(link, "UTF-8")
+        val text = getString(R.string.collection_share_text, c.name, c.items.size) +
+            "\n" + redirect + "\n\n" +
+            getString(R.string.collection_share_fallback) + "\n" + link
+        val i = Intent(Intent.ACTION_SEND)
+        i.type = "text/plain"
+        i.putExtra(Intent.EXTRA_SUBJECT, c.name)
+        i.putExtra(Intent.EXTRA_TEXT, text)
+        startActivity(Intent.createChooser(i, c.name))
+    }
+
+    /** Parses [text] and asks before importing. Returns true if it was a collection link. */
+    fun Activity.importFromText(text: String?, silentIfInvalid: Boolean = false): Boolean {
+        val parsed = text?.let { decodeLink(it) }
+        if (parsed == null) {
+            if (!silentIfInvalid) showToast(R.string.collection_import_invalid)
+            return false
+        }
+        showBottomDialog(
+            listOf(getString(R.string.collection_import_confirm, parsed.name, parsed.items.size)),
+            -1,
+            getString(R.string.collections_title),
+            false,
+            {}
+        ) {
+            val c = importCollection(parsed)
+            showToast(getString(R.string.collection_imported, c.name))
+        }
+        return true
+    }
+
+    fun Activity.importFromClipboard() {
+        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+        val text = cm?.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(this)
+        importFromText(text?.toString())
+    }
+
     // ----- UI -----
 
     private fun Activity.askName(title: String, initial: String, onName: (String) -> Unit) {
@@ -182,12 +303,15 @@ object CustomCollections {
             getString(R.string.collection_new),
             getString(R.string.collection_rename),
             getString(R.string.collection_delete),
+            getString(R.string.collection_share),
+            getString(R.string.collection_import),
         )
         showBottomDialog(actions, -1, getString(R.string.collections_title), false, {}) { which ->
             val cols = getAll()
             when (which) {
                 0 -> promptCreate()
-                1, 2 -> {
+                4 -> importFromClipboard()
+                1, 2, 3 -> {
                     if (cols.isEmpty()) {
                         showToast(R.string.collections_none)
                         return@showBottomDialog
@@ -196,7 +320,9 @@ object CustomCollections {
                         cols.map { it.name }, -1, actions[which], false, {}
                     ) { index ->
                         val c = cols.getOrNull(index) ?: return@showBottomDialog
-                        if (which == 1) {
+                        if (which == 3) {
+                            shareCollection(c)
+                        } else if (which == 1) {
                             askName(actions[1], c.name) { text ->
                                 if (!rename(c.id, text)) showToast(R.string.collection_name_invalid)
                             }
