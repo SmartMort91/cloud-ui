@@ -184,7 +184,11 @@ android {
         }
         create("prerelease") {
             dimension = "state"
-            applicationIdSuffix = ".prerelease"
+            // Test builds (BETA_BUILD=true, see .github/workflows/beta_build.yml) install next to the
+            // normal app with their own data, so they can never replace or update it.
+            val isBeta = System.getenv("BETA_BUILD") == "true"
+            applicationIdSuffix = if (isBeta) ".prerelease.beta" else ".prerelease"
+            resValue("string", "app_name", if (isBeta) "CloudStream BETA" else "CloudStream Custom")
             if (signingConfigs.names.contains("prerelease")) {
                 signingConfig = signingConfigs.getByName("prerelease")
             } else {

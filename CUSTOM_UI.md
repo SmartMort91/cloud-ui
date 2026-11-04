@@ -148,3 +148,10 @@ Builds are signed with a fixed key so new versions install over old ones. The ke
 repository secrets `SIGNING_KEYSTORE_BASE64` and `SIGNING_PASSWORD`, never in the repo.
 If the key is replaced, installed apps cannot update and must be reinstalled once.
 Keep a backup of the key file and password somewhere safe.
+
+## Testing before release (beta branch)
+* Work on the `beta` branch. Pushing it runs `.github/workflows/beta_build.yml`, which builds with `BETA_BUILD=true`
+  and publishes the APK on the `beta-test` release (not a pre-release, not latest, so the updater ignores it).
+* The beta build has package `...prerelease.beta` and the label "CloudStream BETA": it installs next to the normal app,
+  has its own data, and never checks for updates (`MainActivityScreen`).
+* To release it: merge `beta` into `main` and push. `custom_release.yml` then publishes it as `pre-release`.

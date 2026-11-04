@@ -69,7 +69,10 @@ object MainActivityScreen : Screen {
                 repository = GithubReleases,
             ).apply {
                 /** Only search once per session when not in safe mode */
-                if (!hasSearchedForUpdate && !PluginManager.isSafeMode()) {
+                // Test (BETA) builds never look for or offer updates
+                if (!hasSearchedForUpdate && !PluginManager.isSafeMode() &&
+                    !BuildConfig.APPLICATION_ID.endsWith(".beta")
+                ) {
                     hasSearchedForUpdate = true
                     onAction(AutoSearchForUpdate)
                 }

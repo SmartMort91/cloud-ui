@@ -1,0 +1,84 @@
+name: Build test (beta) APK
+
+# Builds a signed TEST APK from the "beta" branch and puts it on a "beta-test" release for you to
+# download by hand. It installs next to the normal app (own package name and data), is never
+# offered to anyone by the in-app updater, and never touches the "pre-release" release.
+#
+# Run it by pushing to the beta branch, or Actions > Build test (beta) APK > Run workflow
+# (pick the branch you want to test).
+#
+# Uses the same two secrets as the main release workflow.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ beta ]
+    paths-ignore:
+      - '*.md'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: beta-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Install signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$SIGNING_PASSWORD" ]; then
+            echo "::error::Add the SIGNING_KEYSTORE_BASE64 and SIGNING_PASSWORD repository secrets first."
+            exit 1
+          fi
+          mkdir -p "$HOME/work/_temp/keystore"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$HOME/work/_temp/keystore/custom-ui.jks"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build signed test APK
+        run: ./gradlew assemblePrereleaseRelease
+        env:
+          BETA_BUILD: "true"
+          SIGNING_KEY_ALIAS: customui
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+
+      - name: Publish test release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA=$(git rev-parse HEAD)
+          printf 'TEST BUILD, not an update. Installs as "CloudStream BETA" next to the normal app.\n\nBranch: %s\nCommit: %s\n' "${GITHUB_REF_NAME}" "${SHA:0:7}" > beta-notes.md
+          gh release delete beta-test --cleanup-tag --yes || true
+          # Not a pre-release and not "latest", so the in-app updater never sees it
+          gh release create beta-test app/build/outputs/apk/prerelease/release/*.apk \
+            --target "$SHA" \
+            --latest=false \
+            --title "BETA test build" \
+            --notes-file beta-notes.md
+
+      - name: Keep a copy of the APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: cloudstream-beta-apk
+          path: app/build/outputs/apk/prerelease/release/*.apk
