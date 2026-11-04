@@ -316,7 +316,9 @@ object InAppUpdater {
                             getString(R.string.apk_installer_key), 1
                         )
 
-                        when (currentInstaller) {
+                        // Custom fork: the session installer fails on some devices with
+                        // "App not installed", so always use the legacy installer here.
+                        when (if (currentInstaller == 0) 1 else currentInstaller) {
                             // New method
                             0 -> {
                                 val intent = PackageInstallerService.Companion.getIntent(

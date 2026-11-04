@@ -67,6 +67,17 @@ class ApkInstaller(private val service: PackageInstallerService) {
                     userAction?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(userAction)
                 }
+                PackageInstaller.STATUS_SUCCESS -> Unit
+                else -> {
+                    val msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        android.widget.Toast.makeText(
+                            context,
+                            "Install failed: ${msg ?: "unknown error"}. Use Settings > Updates > APK Installer > Legacy.",
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
             }
         }
     }
