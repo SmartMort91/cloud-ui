@@ -1,112 +1,68 @@
-# CloudStream
+# CloudStream Custom
 
-**⚠️ Warning: By default, this app doesn't provide any video sources; you have to install extensions to add functionality to the app.**
-<p align="left"><a href="https://github.com/recloudstream/cloudstream/releases/download/pre-release/app-prerelease-release.apk"><img src=".github/images/download-cloudstream-pre.png" alt="Download Cloudstream Pre-Release" width=430/></a></p>
+A custom-styled version of [CloudStream](https://github.com/recloudstream/cloudstream), the open source
+Android media player. It has a streaming-service style interface for phones, Android TV and emulator
+layouts, plus extra themes and features.
 
-[![Discord](https://invidget.switchblade.xyz/5Hus6fM)](https://discord.gg/5Hus6fM)
+> **This is an unofficial fork and is not affiliated with the CloudStream team.**
+> Please do not report problems with this version to the official project.
 
+> **⚠️ By default the app has no video sources.** Like CloudStream, it only plays what extensions
+> provide. You add extensions yourself, and you are responsible for what you use. Please don't use
+> extensions that host or link to copyrighted media you have no right to watch.
 
-## Table of Contents: 
-+ [About Us:](#about_us)
-+ [Installation Steps:](#install_rules)
-+ [Contributing:](#contributing)
-+ [Issues:](#issues)
-  + [Bugs Reports:](#bug_report)
-  + [Enhancement:](#enhancment)
-+ [Extension Development:](#extensions)
-+ [Language Support:](#languages)
-+ [Further Sources](#contact_and_sources)
+## Download
 
+Get the newest APK from the **[releases page](../../releases/tag/pre-release)** and install it.
+Android will ask you once to allow installing apps from your browser or file manager.
 
-<a id="about_us"></a>
+After that the app updates itself: when a new build is published you get an update popup with a list of
+what changed. You never need to come back here to update.
 
-## About us: 
+The app installs next to the official CloudStream, it does not replace it.
 
-**CloudStream is a media center that prioritizes and emphasizes complete freedom and flexibility for users and developers.** 
+## What's different from CloudStream
 
-CloudStream is an extension-based multimedia player with tracking support. There are extensions to view videos from: 
+**Look and layout**
+- Themes, including **Liquid Glass**, Aurora Glass and Sunset Glass (translucent panels), plus Ocean,
+  Ember, Crimson and Graphite
+- Floating navigation bar on phones (can be turned off in Settings > Layout)
+- Restyled settings, home, search and title pages
+- Cinematic hero on the home screen, browse tiles by category and sort
 
-+ [Librevox (audio-books)](https://librivox.org/) 
-+ [Youtube](https://www.youtube.com/)
-+ [Twitch](https://www.twitch.tv/)
-+ [iptv-org (A collection of publicly available IPTV (Internet Protocol television) channels from all over the world.)](https://github.com/iptv-org/iptv) 
-+ [nginx](https://nginx.org/)
-+ And more... 
+**Features**
+- **Custom collections**: make your own named lists like "Horror Night" and add titles from the
+  bookmark button. They show up as tabs in the Library
+- Banner search that searches one provider, with an on-screen keyboard on TV and emulator layouts
+- Provider switcher on the home and title pages: open the same title on another provider
+- Related titles row and clickable tags on title pages
+- Player sources grouped by resolution
+- Preferred subtitle language that is picked automatically
+- Navigation label options and a choice of start screen
+- Self-updating releases
 
+Most options are in **Settings > Layout**.
 
-**Please don't create illegal extensions or use any that host any copyrighted media.** For more details about our stance on the DMCA and EUCD, you can read about it on our organization: [reCloudStream](https://github.com/recloudstream)
+## Reporting problems
 
-#### Important Copyright Note: 
+Open an [issue](../../issues) and include:
+- what screen you were on and what you expected to happen
+- a screenshot if it is a visual problem
+- your phone or TV model and which layout you use (phone, TV or emulator)
 
-Our documentation is unmaintained and open to contributions; therefore, apps and sources, extensions in recommended sources, and recommended apps are not officially moderated or endorsed by CloudStream; if you or another copyright owner identify an extension that breaches your copyright, please let us know. 
+## Building it yourself
 
+The repository builds like CloudStream does (Android Studio or `./gradlew assemblePrereleaseDebug`).
+`CUSTOM_UI.md` lists every file this version adds or changes, and is the place to start if you want to
+change something or merge a newer CloudStream.
 
-#### Features:
-+ **AdFree**, No ads whatsoever
-+ No tracking/analytics
-+ Bookmarks
-+ Phone and TV support
-+ Chromecast
-+ Extension system for personal customization
+The release workflow in `.github/workflows` signs builds with a key kept in repository secrets. If you
+fork this, add your own `SIGNING_KEYSTORE_BASE64` and `SIGNING_PASSWORD` secrets.
 
+## Credits and license
 
-<a id="install_rules"></a>
+All the real work belongs to the [CloudStream](https://github.com/recloudstream/cloudstream) developers
+and contributors. This project only changes how it looks and adds a few features on top.
 
-## Installation: 
-
-Our documentation provides the steps to install and configure CloudStream for your streaming needs.
-
-[Getting Started With CloudStream:](https://recloudstream.github.io/csdocs/)
-
-<a id="contributing"></a>
-
-## Contributing:
-We **happily** accept any contributions to our project. To find out where you can start contributing towards the project, please look [at our issues tab](/cloudstream/issues)
-
-
-
-<a id="issues"></a> 
- 
-### Issues: 
-While we **actively** accept issues and pull requests, we do require you fill out an [template](https://github.com/recloudstream/cloudstream/issues/new/choose) for issues. These include the following:
-
-<a id="bug_report"></a>
-
-- [Bug Report Template: ](https://github.com/recloudstream/cloudstream/issues/new?assignees=&labels=bug&projects=&template=application-bug.yml)
-  - For bug reports, we want as much info as possible, including your downloaded version of CloudeStream, device and updated version (if possible, current API),
-    expected behavior of the program, and the actual behavior that the program did, most importantly we require clear, reproducible steps of the bug. If your bug can't be       reproduced, it is unlikely we'll work on your issue.
-    
-<a id="enhancment"></a>
-  
-- [Feature Request Template: ](https://github.com/recloudstream/cloudstream/issues/new?assignees=&labels=enhancement&projects=&template=feature-request.yml)
-  - Before adding a feature request, please check to see if a feature request already has been requested.  
-
-
-### Extensions:
- 
-**Further details on creating extensions for CloudStream are found in our documentation.**
-
-[Guide: For Extension Developers](https://recloudstream.github.io/csdocs/devs/gettingstarted/) 
-
-<a id="contact_and_sources"></a>
-
-## Further Sources: 
-
-As well as providing clear install steps, our [website](https://dweb.link/ipns/cloudstream.on.fleek.co/) includes a wide variety of other tools, such as: 
-- [Troubleshooting](https://recloudstream.github.io/csdocs/troubleshooting/)
-- [Further CloudStream Repositories](https://recloudstream.github.io/csdocs/repositories/) 
-- Set-Up for other devices, such as:
-  - [Android TV](https://recloudstream.github.io/csdocs/other-devices/tv/)
-  - [Windows](https://recloudstream.github.io/csdocs/other-devices/windows/)
-  - [Linux](https://recloudstream.github.io/csdocs/other-devices/linux/)
-- And more...
-
-<a id="languages"> </a>  
-
-### Supported languages:
-
-Even if you can't contribute to the code or documentation, we always look for those who can contribute to translation and language support. Your contribution is exceptionally appreciated; you can check our translation from the figure below. 
-
-<a href="https://hosted.weblate.org/engage/cloudstream/">
-  <img src="https://hosted.weblate.org/widgets/cloudstream/-/app/multi-auto.svg" alt="Translation status" />
-</a>
+Like CloudStream, this project is licensed under the
+[GNU General Public License v3.0](LICENSE). The full source is in this repository.
