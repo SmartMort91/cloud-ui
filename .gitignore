@@ -226,3 +226,6 @@ fabric.properties
 !/gradle/wrapper/gradle-wrapper.jar
 
 # End of https://www.toptal.com/developers/gitignore/api/kotlin,java,android,androidstudio,visualstudiocode
+
+# Patch files used to apply custom UI changes, they should not be committed
+custom-ui-part*.patch

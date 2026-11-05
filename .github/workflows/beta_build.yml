@@ -62,6 +62,10 @@ jobs:
           SIGNING_KEY_ALIAS: customui
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          ANILIST_KEY: ${{ secrets.ANILIST_KEY }}
+          MAL_KEY: ${{ secrets.MAL_KEY }}
+          SIMKL_CLIENT_ID: ${{ secrets.SIMKL_CLIENT_ID }}
+          SIMKL_CLIENT_SECRET: ${{ secrets.SIMKL_CLIENT_SECRET }}
 
       - name: Publish test release
         env:

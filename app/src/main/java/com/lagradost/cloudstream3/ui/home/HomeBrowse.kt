@@ -254,24 +254,27 @@ object HomeBrowse {
             }
         }
 
-        // Only offer categories that actually have titles
-        Category.values()
-            .filter { it == Category.ALL || it == initial || filter(items, it).isNotEmpty() }
-            .forEach { entry ->
-                addChip(
-                    binding.browseCategoryGroup,
-                    context.getString(entry.labelRes),
-                    entry == initial
-                ) {
+        // Only offer categories that actually have titles. Called again whenever results arrive
+        // late (tag browsing starts with an empty list), and only rebuilds if the set changed.
+        var shownCategories: List<Category>? = null
+        fun rebuildCategories() {
+            val available = Category.values().filter {
+                it == Category.ALL || it == category || filter(data, it).isNotEmpty()
+            }
+            if (available == shownCategories) return
+            shownCategories = available
+            val group = binding.browseCategoryGroup
+            group.removeAllViews()
+            available.forEach { entry ->
+                addChip(group, context.getString(entry.labelRes), entry == category) {
                     category = entry
                     refresh()
                 }
             }
-
-        if (binding.browseCategoryGroup.childCount <= 2) {
             // "All" plus at most one more kind, nothing to choose between
-            (binding.browseCategoryGroup.parent as? View)?.isVisible = false
+            (group.parent as? View)?.isVisible = group.childCount > 2
         }
+        rebuildCategories()
 
         Sort.values().forEach { entry ->
             addChip(
@@ -292,6 +295,7 @@ object HomeBrowse {
                 data = list
                 stillLoading = !done
                 subtitle?.let { binding.browseSubtitle.text = it }
+                rebuildCategories()
                 refresh()
             },
             isShowing = { dialog.isShowing }

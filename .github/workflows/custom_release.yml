@@ -9,6 +9,11 @@ name: Sync CloudStream and publish
 # Needs two repository secrets (Settings > Secrets and variables > Actions):
 #   SIGNING_KEYSTORE_BASE64  the signing key file, base64 encoded
 #   SIGNING_PASSWORD         the password of that key
+#
+# Optional secrets, needed for logging in to the tracking services (AniList, MyAnimeList, Simkl).
+# Without them those logins do not work, because the app has no keys for them. Register your own
+# app with each service and add its values:
+#   ANILIST_KEY, MAL_KEY, SIMKL_CLIENT_ID, SIMKL_CLIENT_SECRET
 
 on:
   workflow_dispatch:
@@ -132,6 +137,10 @@ jobs:
           SIGNING_KEY_ALIAS: customui
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          ANILIST_KEY: ${{ secrets.ANILIST_KEY }}
+          MAL_KEY: ${{ secrets.MAL_KEY }}
+          SIMKL_CLIENT_ID: ${{ secrets.SIMKL_CLIENT_ID }}
+          SIMKL_CLIENT_SECRET: ${{ secrets.SIMKL_CLIENT_SECRET }}
 
       - name: Publish release
         env:
@@ -141,7 +150,8 @@ jobs:
 
           # Release notes: the commit messages since the previous release. The app shows this
           # text in its update popup, so keep it readable.
-          PREV=$(gh release view pre-release --json targetCommitish --jq .targetCommitish 2>/dev/null || true)
+          # (the commit the pre-release tag points to, the release's own "target" is never updated)
+          PREV=$(git rev-parse -q --verify "refs/tags/pre-release^{commit}" 2>/dev/null || true)
           if [ -n "$PREV" ] && git cat-file -e "$PREV^{commit}" 2>/dev/null && [ "$PREV" != "$SHA" ]; then
             RANGE="$PREV..$SHA"
           else
@@ -151,12 +161,23 @@ jobs:
           [ -n "$CHANGES" ] || CHANGES="- Rebuilt with no new changes"
           printf 'What changed:\n%s\n\nBuilt from commit %s.\n' "$CHANGES" "${SHA:0:7}" > release-notes.md
 
-          gh release delete pre-release --cleanup-tag --yes || true
-          gh release create pre-release app/build/outputs/apk/prerelease/release/*.apk \
-            --target "$SHA" \
-            --latest \
-            --title "Custom build" \
-            --notes-file release-notes.md
+          if gh release view pre-release > /dev/null 2>&1; then
+            # Swap the APK, the tag and the notes in place. The release is never deleted, so a
+            # failure half way cannot leave installed apps with nothing to update from.
+            gh release upload pre-release app/build/outputs/apk/prerelease/release/*.apk --clobber
+            git tag -f pre-release "$SHA"
+            git push --force origin refs/tags/pre-release
+            gh release edit pre-release \
+              --latest \
+              --title "Custom build" \
+              --notes-file release-notes.md
+          else
+            gh release create pre-release app/build/outputs/apk/prerelease/release/*.apk \
+              --target "$SHA" \
+              --latest \
+              --title "Custom build" \
+              --notes-file release-notes.md
+          fi
 
       - name: Keep a copy of the APK
         uses: actions/upload-artifact@v7

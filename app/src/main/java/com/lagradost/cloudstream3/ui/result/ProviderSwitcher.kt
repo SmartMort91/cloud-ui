@@ -34,7 +34,8 @@ object ProviderSwitcher {
     data class Alternative(val apiName: String, val url: String, val title: String)
 
     private const val SEARCH_TIMEOUT_MS = 8000L
-    private const val MAX_PROVIDERS = 30
+    // Every title you open is searched on this many other providers, so keep it small
+    private const val MAX_PROVIDERS = 6
 
     private val cache = HashMap<String, List<Alternative>>()
 

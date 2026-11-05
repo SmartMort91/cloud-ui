@@ -151,6 +151,12 @@ object CustomCollections {
     // ----- Sharing -----
 
     const val LINK_SCHEME = "cscollection"
+
+    // Limits for imported links: encoded size, size after unzipping, and number of titles
+    private const val MAX_LINK_CHARS = 400_000
+    private const val MAX_JSON_BYTES = 2 * 1024 * 1024
+    private const val MAX_ITEMS = 1000
+
     private val linkRegex = Regex(
         """cscollection(?:://|%3A%2F%2F)([A-Za-z0-9_-]+)|\.github\.io/[^\s?]*\?c=([A-Za-z0-9_-]+)""",
         RegexOption.IGNORE_CASE
@@ -185,13 +191,25 @@ object CustomCollections {
     fun decodeLink(text: String): Collection? {
         val m = linkRegex.find(text) ?: return null
         val payload = (m.groupValues[1].ifEmpty { m.groupValues[2] }).ifEmpty { return null }
+        // Links come from outside the app, so refuse anything unreasonably large
+        if (payload.length > MAX_LINK_CHARS) return null
         return runCatching {
             val bytes = Base64.decode(payload, Base64.URL_SAFE or Base64.NO_WRAP)
-            val json = GZIPInputStream(ByteArrayInputStream(bytes)).use {
-                String(it.readBytes(), Charsets.UTF_8)
+            val json = GZIPInputStream(ByteArrayInputStream(bytes)).use { input ->
+                val out = ByteArrayOutputStream()
+                val buffer = ByteArray(8192)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    out.write(buffer, 0, read)
+                    // Thrown errors are caught by runCatching, the link is then treated as invalid
+                    require(out.size() <= MAX_JSON_BYTES) { "collection link too large" }
+                }
+                String(out.toByteArray(), Charsets.UTF_8)
             }
             val root = JSONObject(json)
             val arr = root.getJSONArray("i")
+            require(arr.length() <= MAX_ITEMS) { "too many titles" }
             val now = System.currentTimeMillis()
             Collection(
                 "",
