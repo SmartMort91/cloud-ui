@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Android Auto -->
+    <string name="car_tab_continue">Continue watching</string>
+    <string name="car_tab_downloads">Downloads</string>
     <!-- KEYS -->
     <string name="search_providers_list_key">search_providers_list</string>
     <string name="locale_key">app_locale</string>

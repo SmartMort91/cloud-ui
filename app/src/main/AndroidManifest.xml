@@ -14,6 +14,7 @@
     <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" /> <!-- Used for updates without prompt -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" /> <!-- Used for update service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" /> <!-- Used for Android Auto playback -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" /> <!-- We can use this directly as CS3 is not on Play Store -->
     <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA" />  <!-- We can use to read the tv channel list -->
@@ -93,6 +94,11 @@
         <meta-data
             android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
             android:value="com.lagradost.cloudstream3.utils.CastOptionsProvider" />
+
+        <!-- Lets Android Auto list the app as a media app, see services/CarMediaService.kt -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
 
         <profileable
             android:shell="true"
@@ -265,6 +271,18 @@
         <receiver
             android:name=".receivers.PackageInstallerStatusReceiver"
             android:exported="false" />
+
+        <!-- Browsed by Android Auto and other car media browsers. Exported on purpose, the service
+             itself only accepts known clients. -->
+        <service
+            android:name=".services.CarMediaService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaLibraryService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
 
         <service
             android:name=".services.VideoDownloadService"
