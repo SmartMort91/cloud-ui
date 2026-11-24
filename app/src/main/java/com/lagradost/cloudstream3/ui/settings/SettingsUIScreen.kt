@@ -178,6 +178,7 @@ object SettingsUIScreen : SearchableSettings {
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.TextPreference(
                     title = searchTitle,
+                    icon = painterResource(R.drawable.search_icon),
                     subtitle = UiPrefs.searchProvider ?: offText,
                     onClick = {
                         val providers = (activity?.filterProviderByPreferredMedia(
@@ -200,6 +201,7 @@ object SettingsUIScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = homeTitle,
+                    icon = painterResource(R.drawable.ic_baseline_ondemand_video_24),
                     subtitle = label(
                         homeNames, homeValues,
                         UiPrefs.getOpt(UiPrefs.HOME_STYLE, UiPrefs.HOME_DEFAULT)
@@ -213,6 +215,7 @@ object SettingsUIScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = tilesTitle,
+                    icon = painterResource(R.drawable.baseline_grid_view_24),
                     subtitle = label(
                         onOffNames, onOffValues, UiPrefs.getOpt(UiPrefs.HOME_TILES, "on")
                     ),
@@ -225,6 +228,7 @@ object SettingsUIScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = focusTitle,
+                    icon = painterResource(R.drawable.ic_baseline_touch_app_24),
                     subtitle = label(
                         focusNames, focusValues,
                         UiPrefs.getOpt(UiPrefs.FOCUS_STYLE, UiPrefs.FOCUS_LIFT)
@@ -238,6 +242,7 @@ object SettingsUIScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = switcherTitle,
+                    icon = painterResource(R.drawable.dns_24px),
                     subtitle = label(
                         onOffNames, onOffValues, UiPrefs.getOpt(UiPrefs.PROVIDER_SWITCHER, "on")
                     ),
@@ -250,6 +255,7 @@ object SettingsUIScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = floatTitle,
+                    icon = painterResource(R.drawable.ic_dashboard_black_24dp),
                     subtitle = label(
                         onOffNames, onOffValues, UiPrefs.getOpt(FloatingNav.OPTION, "on")
                     ),
@@ -265,6 +271,7 @@ object SettingsUIScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = timingTitle,
+                    icon = painterResource(R.drawable.hourglass_24),
                     subtitle = label(
                         onOffNames, onOffValues, UiPrefs.getOpt(StartupTimer.OPTION, "off")
                     ),
@@ -277,6 +284,7 @@ object SettingsUIScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = subLangTitle,
+                    icon = painterResource(R.drawable.closed_caption_24px),
                     subtitle = subLangNames.getOrNull(
                         subLangTags.indexOf(SubtitlesFragment.getAutoSelectLanguageTagIETF())
                     ) ?: noneLabel,
@@ -295,6 +303,7 @@ object SettingsUIScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = navTitle,
+                    icon = painterResource(R.drawable.title_24px),
                     subtitle = label(navNames, navValues, sharedString(navKey, "selected")),
                     onClick = {
                         pick(navTitle, navNames, navValues, sharedString(navKey, "selected")) {
@@ -307,6 +316,7 @@ object SettingsUIScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = startTitle,
+                    icon = painterResource(R.drawable.home_icon_filled_24),
                     subtitle = label(startNames, startValues, sharedString(startKey, "home")),
                     onClick = {
                         pick(startTitle, startNames, startValues, sharedString(startKey, "home")) {
@@ -521,26 +531,32 @@ object SettingsUIScreen : SearchableSettings {
                     Preference.PreferenceItem.SwitchPreference(
                         preference = settings.ui.posterShowRating,
                         title = stringResource(R.string.show_rating),
+                        icon = painterResource(R.drawable.ic_baseline_star_24),
                     ),
                     Preference.PreferenceItem.SwitchPreference(
                         preference = settings.ui.posterShowEpisode,
                         title = stringResource(R.string.show_episode_text),
+                        icon = painterResource(R.drawable.baseline_list_alt_24),
                     ),
                     Preference.PreferenceItem.SwitchPreference(
                         preference = settings.ui.posterShowTitle,
                         title = stringResource(R.string.show_title),
+                        icon = painterResource(R.drawable.title_24px),
                     ),
                     Preference.PreferenceItem.SwitchPreference(
                         preference = settings.ui.posterShowHd,
                         title = stringResource(R.string.show_hd),
+                        icon = painterResource(R.drawable.ic_baseline_hd_24),
                     ),
                     Preference.PreferenceItem.SwitchPreference(
                         preference = settings.ui.posterShowDub,
                         title = stringResource(R.string.show_dub),
+                        icon = painterResource(R.drawable.baseline_headphones_24),
                     ),
                     Preference.PreferenceItem.SwitchPreference(
                         preference = settings.ui.posterShowSub,
                         title = stringResource(R.string.show_sub),
+                        icon = painterResource(R.drawable.ic_baseline_subtitles_24),
                     ),
                 )
             )
