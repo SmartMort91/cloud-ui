@@ -38,7 +38,13 @@ fun Scaffold(
     floatingActionButton: @Composable () -> Unit = {},
     floatingActionButtonPosition: FabPosition = FabPosition.End,
     containerColor: Color = if (LocalTransparentScreens.current) Color.Transparent else MaterialTheme.colorScheme.background,
-    contentColor: Color = contentColorFor(containerColor),
+    // contentColorFor() cannot map a transparent container to a text colour and falls back to
+    // the default (black), which made all uncoloured text dark on the glass themes.
+    contentColor: Color = if (containerColor == Color.Transparent) {
+        MaterialTheme.colorScheme.onBackground
+    } else {
+        contentColorFor(containerColor)
+    },
     contentWindowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,
     content: @Composable (PaddingValues) -> Unit,
 ) {

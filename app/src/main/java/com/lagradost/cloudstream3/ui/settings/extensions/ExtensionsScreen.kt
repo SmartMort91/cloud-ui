@@ -172,6 +172,7 @@ import com.mihon.presentation.LocalBackPress
 import com.mihon.presentation.secondaryItemAlpha
 import com.mihon.presentation.settings.LocalPreferenceHighlighted
 import com.mihon.presentation.settings.LocalPreferenceMinHeight
+import com.mihon.presentation.settings.settingsCard
 import com.mihon.presentation.settings.widget.BasePreferenceWidget
 import com.mihon.presentation.settings.widget.PrefsHorizontalPadding
 import com.mihon.presentation.settings.widget.TextPreferenceWidget
@@ -776,6 +777,8 @@ object ExtensionsScreen : Screen {
                             modifier = Modifier
                                 .animateItem()
                                 .graphicsLayer { alpha = itemAlpha.value }
+                                .padding(horizontal = 12.dp, vertical = 3.dp)
+                                .settingsCard(RoundedCornerShape(22.dp))
                         )
                     }
                 }
@@ -1616,13 +1619,14 @@ object ExtensionsScreen : Screen {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .settingsCard(RoundedCornerShape(22.dp))
                 .clickable(
                     enabled = isLayout(PHONE),
                     onClick = {
                         openInstalledPlugins()
                     })
-                .padding(MaterialTheme.padding.small)
+                .padding(MaterialTheme.padding.medium)
         ) {
             Text(stringResource(R.string.extensions))
             Spacer(modifier = Modifier.height(MaterialTheme.padding.small))

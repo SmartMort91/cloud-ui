@@ -7,12 +7,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -79,10 +76,7 @@ fun PreferenceScreen(
                             modifier = Modifier
                                 .padding(horizontal = 12.dp)
                                 .padding(top = if (index == 0) 0.dp else 2.dp)
-                                .clip(shape)
-                                .background(
-                                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.07f)
-                                )
+                                .settingsCard(shape)
                         ) {
                             PreferenceItem(
                                 item = item,
@@ -92,7 +86,7 @@ fun PreferenceScreen(
                     }
                     item {
                         if (i < items.lastIndex) {
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
                 }

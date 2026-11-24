@@ -6,6 +6,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -83,6 +85,7 @@ import com.lagradost.cloudstream4.theme.CloudStreamPreviewTheme
 import com.mihon.material.padding
 import com.mihon.presentation.settings.SearchableSettings
 import com.mihon.presentation.settings.SettingSearchResults
+import com.mihon.presentation.settings.settingsCard
 import com.mihon.presentation.settings.SettingsData
 import com.mihon.presentation.settings.widget.TextPreferenceWidget
 import kotlinx.collections.immutable.PersistentList
@@ -216,8 +219,10 @@ object SettingsFragmentScreen : Screen {
 
                 Row(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .focusOutline()
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp)
+                        .settingsCard(RoundedCornerShape(22.dp))
+                        .focusOutline(shape = RoundedCornerShape(22.dp))
                         .clickable {
                             activity.navigate(
                                 R.id.accountSelectActivity,
@@ -414,18 +419,25 @@ object SettingsFragmentScreen : Screen {
 
     @Composable
     fun SettingsTab(settingsTab: SettingsNavigation) {
-        TextPreferenceWidget(
-            title = stringResource(settingsTab.title),
-            icon = painterResource(settingsTab.icon),
-            // This can not be converted to joinToString due to stringResource being composable
-            subtitle =
-                @Suppress("SimplifiableCallChain")
-                settingsTab.subtitle.map { stringResource(it) }.joinToString(),
-            // Clear it if we have already set it but navigated back instantly
-            onPreferenceClick = {
-                SearchableSettings.highlightKey = null
-                activity?.navigate(settingsTab.navigation)
-            })
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 3.dp)
+                .settingsCard(RoundedCornerShape(22.dp))
+        ) {
+            TextPreferenceWidget(
+                title = stringResource(settingsTab.title),
+                icon = painterResource(settingsTab.icon),
+                iconInCircle = true,
+                // This can not be converted to joinToString due to stringResource being composable
+                subtitle =
+                    @Suppress("SimplifiableCallChain")
+                    settingsTab.subtitle.map { stringResource(it) }.joinToString(),
+                // Clear it if we have already set it but navigated back instantly
+                onPreferenceClick = {
+                    SearchableSettings.highlightKey = null
+                    activity?.navigate(settingsTab.navigation)
+                })
+        }
     }
 
     @Composable
@@ -441,28 +453,36 @@ object SettingsFragmentScreen : Screen {
             commitHash to buildTimestamp
         }
 
-        Row(
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
+        // A small centred chip instead of a full width row
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)
-                .focusOutline()
-                .clickable {
-                    clipboardHelper(
-                        txt(R.string.extension_version),
-                        "${BuildConfig.VERSION_NAME} $commitHash $buildTimestamp"
-                    )
-                },
+                .padding(vertical = 12.dp),
+            contentAlignment = Alignment.Center,
         ) {
-            ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
-                Text(text = BuildConfig.VERSION_NAME)
-                if (commitHash != "") {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .settingsCard(CircleShape)
+                    .focusOutline(shape = CircleShape)
+                    .clickable {
+                        clipboardHelper(
+                            txt(R.string.extension_version),
+                            "${BuildConfig.VERSION_NAME} $commitHash $buildTimestamp"
+                        )
+                    }
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+            ) {
+                ProvideTextStyle(MaterialTheme.typography.bodySmall) {
+                    Text(text = BuildConfig.VERSION_NAME)
+                    if (commitHash != "") {
+                        Text("•")
+                        Text(text = commitHash)
+                    }
                     Text("•")
-                    Text(text = commitHash)
+                    Text(text = buildTimestamp)
                 }
-                Text("•")
-                Text(text = buildTimestamp)
             }
         }
     }
