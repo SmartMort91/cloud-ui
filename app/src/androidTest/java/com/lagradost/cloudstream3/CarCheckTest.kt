@@ -4,7 +4,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.media.browse.MediaBrowser
 import android.media.session.MediaController
-import android.media.session.PlaybackState
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -13,6 +12,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.lagradost.cloudstream3.services.CarMediaService
 import com.lagradost.cloudstream3.utils.DOWNLOAD_EPISODE_CACHE
 import com.lagradost.cloudstream3.utils.DOWNLOAD_HEADER_CACHE
+import com.lagradost.cloudstream3.utils.DataStore.removeKey
 import com.lagradost.cloudstream3.utils.DataStore.setKey
 import com.lagradost.cloudstream3.utils.DataStoreHelper
 import com.lagradost.cloudstream3.utils.downloader.DownloadObjects
@@ -89,103 +89,116 @@ class CarCheckTest {
         return "id=${d.mediaId} title='${d.title}' sub='${d.subtitle}' browsable=${i.isBrowsable} playable=${i.isPlayable} icon=${d.iconUri}"
     }
 
+    private fun dump(ctx: Context, label: String, play: Boolean) {
+        log("===== $label")
+        val connected = CountDownLatch(1)
+        var failed: String? = null
+        lateinit var browser: MediaBrowser
+        main.post {
+            browser = MediaBrowser(
+                ctx,
+                ComponentName(ctx, CarMediaService::class.java),
+                object : MediaBrowser.ConnectionCallback() {
+                    override fun onConnected() = connected.countDown()
+                    override fun onConnectionFailed() {
+                        failed = "onConnectionFailed"; connected.countDown()
+                    }
+
+                    override fun onConnectionSuspended() {
+                        failed = "onConnectionSuspended"; connected.countDown()
+                    }
+                },
+                null
+            )
+            browser.connect()
+        }
+        if (!connected.await(30, TimeUnit.SECONDS)) {
+            log("RESULT connect timed out"); return
+        }
+        if (failed != null) {
+            log("RESULT connect $failed"); return
+        }
+        log("connected root=${browser.root}")
+
+        fun children(parent: String): List<MediaBrowser.MediaItem>? {
+            val latch = CountDownLatch(1)
+            var out: List<MediaBrowser.MediaItem>? = null
+            var err = false
+            main.post {
+                browser.subscribe(parent, object : MediaBrowser.SubscriptionCallback() {
+                    override fun onChildrenLoaded(p: String, c: MutableList<MediaBrowser.MediaItem>) {
+                        out = c.toList(); latch.countDown()
+                    }
+
+                    override fun onError(p: String) {
+                        err = true; latch.countDown()
+                    }
+                })
+            }
+            if (!latch.await(20, TimeUnit.SECONDS)) {
+                log("children($parent) timed out"); return null
+            }
+            if (err) log("children($parent) onError")
+            return out
+        }
+
+        val tabs = children(browser.root)
+        log("ROOT has ${tabs?.size} children")
+        var firstPlayable: String? = null
+        tabs?.forEach { tab ->
+            log("  TAB ${describe(tab)}")
+            if (!tab.isBrowsable) return@forEach
+            val kids = children(tab.mediaId!!)
+            log("    -> ${kids?.size} items")
+            kids?.forEach { k ->
+                log("    ITEM ${describe(k)}")
+                if (k.isBrowsable) {
+                    children(k.mediaId!!)?.forEach { s ->
+                        log("      SUB ${describe(s)}")
+                        if (s.isPlayable && firstPlayable == null) firstPlayable = s.mediaId
+                    }
+                } else if (k.isPlayable && firstPlayable == null) firstPlayable = k.mediaId
+            }
+        }
+
+        if (play) {
+            val id = firstPlayable
+            if (id == null) {
+                log("RESULT nothing playable found")
+            } else {
+                val ready = CountDownLatch(1)
+                lateinit var controller: MediaController
+                main.post {
+                    controller = MediaController(ctx, browser.sessionToken)
+                    controller.transportControls.playFromMediaId(id, null)
+                    ready.countDown()
+                }
+                ready.await(10, TimeUnit.SECONDS)
+                Thread.sleep(3000)
+                val st = controller.playbackState
+                log("PLAY $id state=${st?.state} position=${st?.position} error='${st?.errorMessage}'")
+                main.post { controller.transportControls.stop() }
+                Thread.sleep(500)
+            }
+        }
+        main.post { browser.disconnect() }
+        Thread.sleep(500)
+    }
+
     @Test
     fun browseLikeAndroidAuto() {
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
         try {
             seed(ctx)
+            dump(ctx, "1: downloads + one half watched (expect Continue + Downloads)", play = true)
 
-            val connected = CountDownLatch(1)
-            var failed: String? = null
-            lateinit var browser: MediaBrowser
-            main.post {
-                browser = MediaBrowser(
-                    ctx,
-                    ComponentName(ctx, CarMediaService::class.java),
-                    object : MediaBrowser.ConnectionCallback() {
-                        override fun onConnected() = connected.countDown()
-                        override fun onConnectionFailed() {
-                            failed = "onConnectionFailed"; connected.countDown()
-                        }
+            DataStoreHelper.setViewPos(2002, 0L, 600_000L)
+            dump(ctx, "2: nothing to resume (expect only Downloads)", play = false)
 
-                        override fun onConnectionSuspended() {
-                            failed = "onConnectionSuspended"; connected.countDown()
-                        }
-                    },
-                    null
-                )
-                browser.connect()
+            listOf(2001, 2002, 2003).forEach {
+                ctx.removeKey(VideoDownloadManager.KEY_DOWNLOAD_INFO, it.toString())
             }
-            if (!connected.await(30, TimeUnit.SECONDS)) {
-                log("RESULT connect timed out"); return
-            }
-            if (failed != null) {
-                log("RESULT connect $failed"); return
-            }
-            log("connected root=${browser.root} extras=${browser.extras}")
-
-            fun children(parent: String): List<MediaBrowser.MediaItem>? {
-                val latch = CountDownLatch(1)
-                var out: List<MediaBrowser.MediaItem>? = null
-                var err = false
-                main.post {
-                    browser.subscribe(parent, object : MediaBrowser.SubscriptionCallback() {
-                        override fun onChildrenLoaded(p: String, c: MutableList<MediaBrowser.MediaItem>) {
-                            out = c.toList(); latch.countDown()
-                        }
-
-                        override fun onError(p: String) {
-                            err = true; latch.countDown()
-                        }
-                    })
-                }
-                if (!latch.await(20, TimeUnit.SECONDS)) {
-                    log("children($parent) timed out"); return null
-                }
-                if (err) log("children($parent) onError")
-                return out
-            }
-
-            val tabs = children(browser.root)
-            log("ROOT has ${tabs?.size} children")
-            var firstPlayable: String? = null
-            tabs?.forEach { tab ->
-                log("  TAB ${describe(tab)}")
-                val kids = children(tab.mediaId!!)
-                log("    -> ${kids?.size} items")
-                kids?.forEach { k ->
-                    log("    ITEM ${describe(k)}")
-                    if (k.isBrowsable) {
-                        val sub = children(k.mediaId!!)
-                        sub?.forEach { s ->
-                            log("      SUB ${describe(s)}")
-                            if (s.isPlayable && firstPlayable == null) firstPlayable = s.mediaId
-                        }
-                    } else if (k.isPlayable && firstPlayable == null) firstPlayable = k.mediaId
-                }
-            }
-
-            val id = firstPlayable
-            if (id == null) {
-                log("RESULT nothing playable found"); return
-            }
-            val states = mutableListOf<String>()
-            val controllerReady = CountDownLatch(1)
-            lateinit var controller: MediaController
-            main.post {
-                controller = MediaController(ctx, browser.sessionToken)
-                controller.registerCallback(object : MediaController.Callback() {
-                    override fun onPlaybackStateChanged(state: PlaybackState?) {
-                        states += "${state?.state}@${state?.position}"
-                    }
-                })
-                controller.transportControls.playFromMediaId(id, null)
-                controllerReady.countDown()
-            }
-            controllerReady.await(10, TimeUnit.SECONDS)
-            Thread.sleep(5000)
-            val st = controller.playbackState
-            log("PLAY $id state=${st?.state} position=${st?.position} error='${st?.errorMessage}' history=$states")
+            dump(ctx, "3: no downloads (expect one hint item)", play = false)
             log("RESULT done")
         } catch (t: Throwable) {
             log("RESULT crashed: ${Log.getStackTraceString(t)}")
