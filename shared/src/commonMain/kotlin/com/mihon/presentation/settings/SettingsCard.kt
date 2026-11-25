@@ -43,3 +43,16 @@ fun Modifier.settingsCard(shape: Shape): Modifier {
             .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f), shape)
     }
 }
+
+/**
+ * [settingsCard] on top of an opaque base. Use this for panels that float over scrolling content
+ * (like the stats bar on the extensions screen), a see-through card there lets the list text
+ * show through and collide with the card's own text.
+ */
+@Composable
+fun Modifier.settingsOverlayCard(shape: Shape): Modifier {
+    return this
+        .clip(shape)
+        .background(MaterialTheme.colorScheme.background, shape)
+        .settingsCard(shape)
+}

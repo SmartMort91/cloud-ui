@@ -19,6 +19,7 @@
 
             app:cardCornerRadius="@dimen/rounded_image_radius"
             app:cardBackgroundColor="?attr/boxItemBackground"
+            app:cardElevation="0dp"
             android:clickable="true"
             android:focusable="true">
 
