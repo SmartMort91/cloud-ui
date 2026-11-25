@@ -3,6 +3,8 @@
     <!-- Android Auto -->
     <string name="car_tab_continue">Continue watching</string>
     <string name="car_tab_downloads">Downloads</string>
+    <string name="car_no_downloads">No downloads yet</string>
+    <string name="car_no_downloads_hint">Download episodes or movies in CloudStream first</string>
     <!-- KEYS -->
     <string name="search_providers_list_key">search_providers_list</string>
     <string name="locale_key">app_locale</string>
