@@ -1,0 +1,117 @@
+11-25 22:56:29.027  1122  1122 W MediaSessionCompat: Couldn't find a unique registered media button receiver in the given context.
+11-25 22:56:29.027   656   725 I MediaSessionStack: addSession to bottom of stack | record: com.android.bluetooth/BluetoothMediaBrowserService/4 (userId=0)
+11-25 22:56:29.065   656   725 D MediaSessionService: onSessionPlaybackStateChanged: record=com.android.bluetooth/BluetoothMediaBrowserService/4 (userId=0) playbackState=PlaybackState {state=ERROR(7), position=0, buffered position=0, speed=0.0, updated=46712, actions=0, custom actions=[], active item id=-1, error=Bluetooth audio disconnected}
+11-25 22:56:29.072  1122  1122 I BluetoothMediaBrowserService: Service set to com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService@55aa291
+11-25 22:56:29.077  1122  1122 I BluetoothMediaBrowserService: Browser Client Connection Request, client='com.android.bluetooth')
+11-25 22:56:29.081   656  1277 I MediaSessionStack: removeSession | record: com.android.bluetooth/BluetoothMediaBrowserService/4 (userId=0)
+11-25 22:56:29.085   656  1277 D MediaSessionService: destroySessionLocked: record=com.android.bluetooth/BluetoothMediaBrowserService/4 (userId=0)
+11-25 22:56:29.085  1122  1122 I BluetoothMediaBrowserService: Service set to null
+11-25 22:56:29.085  1122  1122 W MediaSessionCompat: Couldn't find a unique registered media button receiver in the given context.
+11-25 22:56:29.086   656  1068 I MediaSessionStack: addSession to bottom of stack | record: com.android.bluetooth/BluetoothMediaBrowserService/5 (userId=0)
+11-25 22:56:29.086   656  1068 D MediaSessionService: onSessionPlaybackStateChanged: record=com.android.bluetooth/BluetoothMediaBrowserService/5 (userId=0) playbackState=PlaybackState {state=ERROR(7), position=0, buffered position=0, speed=0.0, updated=46733, actions=0, custom actions=[], active item id=-1, error=Bluetooth audio disconnected}
+11-25 22:56:29.091  1122  1122 I BluetoothMediaBrowserService: Service set to com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService@a2d1b82
+11-25 22:56:29.267  1122  1122 I BluetoothMediaBrowserService: Browser Client Connection Request, client='com.android.bluetooth')
+11-25 22:56:29.268  1122  1122 W BluetoothMediaBrowserService: getContents(id=__ROOT__): AVRCP Controller Service not ready
+11-25 22:56:29.448   656  1753 I MediaSessionStack: removeSession | record: com.android.bluetooth/BluetoothMediaBrowserService/5 (userId=0)
+11-25 22:56:29.524   656  1753 D MediaSessionService: destroySessionLocked: record=com.android.bluetooth/BluetoothMediaBrowserService/5 (userId=0)
+11-25 22:56:29.537  1122  1122 I BluetoothMediaBrowserService: Service set to null
+11-25 22:56:30.969   656  1120 I MediaSessionStack: addSession to bottom of stack | record: com.android.music/MediaPlaybackService/6 (userId=0)
+11-25 22:56:31.083   656   726 D MediaSessionService: onSessionPlaybackStateChanged: record=com.android.music/MediaPlaybackService/6 (userId=0) playbackState=PlaybackState {state=NONE(0), position=0, buffered position=0, speed=0.0, updated=0, actions=516, custom actions=[], active item id=-1, error=null}
+11-25 22:56:31.167  1749  1749 I MediaBrowserService: No root for client com.android.bluetooth from service android.service.media.MediaBrowserService$ServiceState
+11-25 22:56:31.169  1122  1122 E MediaBrowser: onConnectFailed for ComponentInfo{com.android.music/com.android.music.MediaPlaybackService}
+11-25 22:56:35.574   656   689 D SystemServerTimingAsync: ssm.onUnlockedUser-0_com.android.server.media.MediaSessionService
+11-25 22:56:35.574   656   689 V SystemServerTimingAsync: ssm.onUnlockedUser-0_com.android.server.media.MediaSessionService took to complete: 0ms
+11-25 23:01:32.777   656   681 D NativeLibraryHelper: Punching extracted elf file libmedia3ext.so on fs:61267
+11-25 23:01:33.592  2512  2512 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-25 23:01:33.595  2512  2512 I AndroidRuntime: Using default boot image
+11-25 23:01:33.595  2512  2512 I AndroidRuntime: Leaving lock profiling enabled
+11-25 23:01:33.696  2512  2512 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+11-25 23:01:35.608  2523  2539 I CARCHECK: seeded 3 downloads in /storage/emulated/0/Android/data/com.lagradost.cloudstream3.prerelease.debug/files/carcheck, account=0
+11-25 23:01:35.608  2523  2539 I CARCHECK: ===== 1: downloads + one half watched (expect Continue + Downloads)
+11-25 23:01:35.645  2523  2523 I ExoPlayerImpl: Init ceb8c18 [AndroidXMedia3/1.9.3] [emu64x, Android SDK built for x86_64, unknown, 36]
+11-25 23:01:35.703  2523  2523 I MediaSessionImpl: Init 5cf155c [AndroidXMedia3/1.9.3] [emu64x, Android SDK built for x86_64, unknown, 36]
+11-25 23:01:35.718  2523  2523 I MediaSessionCompat: Couldn't find a unique registered media button receiver in the given context.
+11-25 23:01:35.721   656  1723 I MediaSessionStack: addSession to bottom of stack | record: com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0)
+11-25 23:01:35.734   656  1723 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=NONE(0), position=0, buffered position=0, speed=0.0, updated=353381, actions=7339653, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.734   656  1723 D MediaSessionService: onSessionActiveStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=NONE(0), position=0, buffered position=0, speed=0.0, updated=353381, actions=7339653, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.740   656  1723 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=NONE(0), position=0, buffered position=0, speed=0.0, updated=353387, actions=7339653, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.753  2523  2523 I MediaController: Init 94ad92 [AndroidXMedia3/1.9.3] [emu64x, Android SDK built for x86_64, unknown, 36]
+11-25 23:01:35.759  2523  2523 I CarMediaService: Media browser com.lagradost.cloudstream3.prerelease.debug trusted=true allowed=true
+11-25 23:01:35.760   656  1723 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=NONE(0), position=0, buffered position=0, speed=0.0, updated=353407, actions=7339653, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.770  2523  2523 I CarMediaService: Media browser com.lagradost.cloudstream3.prerelease.debug trusted=true allowed=true
+11-25 23:01:35.771  2523  2539 I CARCHECK: connected root=root
+11-25 23:01:35.787  2523  2539 I CARCHECK: ROOT has 2 children
+11-25 23:01:35.787  2523  2539 I CARCHECK:   TAB id=tab_continue title='Continue watching' sub='null' browsable=true playable=false icon=null
+11-25 23:01:35.793  2523  2539 I CARCHECK:     -> 1 items
+11-25 23:01:35.793  2523  2539 I CARCHECK:     ITEM id=dl:2002 title='S1:E2 · Episode 2' sub='Dexter' browsable=false playable=true icon=null
+11-25 23:01:35.794  2523  2539 I CARCHECK:   TAB id=tab_downloads title='Downloads' sub='null' browsable=true playable=false icon=null
+11-25 23:01:35.799  2523  2539 I CARCHECK:     -> 2 items
+11-25 23:01:35.799  2523  2539 I CARCHECK:     ITEM id=title:1001 title='Dexter' sub='null' browsable=true playable=false icon=null
+11-25 23:01:35.804  2523  2539 I CARCHECK:       SUB id=dl:2001 title='S1:E1 · Episode 1' sub='Dexter' browsable=false playable=true icon=null
+11-25 23:01:35.804  2523  2539 I CARCHECK:       SUB id=dl:2002 title='S1:E2 · Episode 2' sub='Dexter' browsable=false playable=true icon=null
+11-25 23:01:35.804  2523  2539 I CARCHECK:     ITEM id=dl:2003 title='The Odyssey' sub='The Odyssey' browsable=false playable=true icon=null
+11-25 23:01:35.806  2523  2523 I CarMediaService: Media browser com.lagradost.cloudstream3.prerelease.debug trusted=true allowed=true
+11-25 23:01:35.817   656  1723 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=NONE(0), position=0, buffered position=0, speed=0.0, updated=353464, actions=7339669, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.818   656  1723 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=NONE(0), position=0, buffered position=0, speed=0.0, updated=353465, actions=7339669, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.820   656  1723 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=PAUSED(2), position=0, buffered position=0, speed=0.0, updated=353467, actions=7339669, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.821   656  1723 I MediaSessionStack: onPlaybackStateChanged - Pushing session to top | record: com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0)
+11-25 23:01:35.821   656  1723 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=BUFFERING(6), position=0, buffered position=0, speed=0.0, updated=353468, actions=7339667, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.833   656  1723 W AS.HardeningEnforcer: AudioHardening focus request for req 1 would be ignored for com.lagradost.cloudstream3.prerelease.debug (10150), android.media.AudioManager@2091b53androidx.media3.common.audio.AudioFocusManager$$ExternalSyntheticLambda0@9661c90, level: full
+11-25 23:01:35.833   656  1723 I MediaFocusControl: requestAudioFocus() from uid/pid 10150/2523 AA=USAGE_MEDIA/CONTENT_TYPE_MOVIE clientId=android.media.AudioManager@2091b53androidx.media3.common.audio.AudioFocusManager$$ExternalSyntheticLambda0@9661c90 callingPack=com.lagradost.cloudstream3.prerelease.debug req=1 flags=0x0 sdk=36
+11-25 23:01:35.842   656  1723 I ActivityManager: Background started FGS: Allowed [callingPackage: com.lagradost.cloudstream3.prerelease.debug; callingUid: 10150; uidState: FGS ; uidBFSL: [BFSL]; intent: Intent { xflg=0x4 cmp=com.lagradost.cloudstream3.prerelease.debug/com.lagradost.cloudstream3.services.CarMediaService }; code:ACTIVITY_STARTER; tempAllowListReason:<null>; allowWiu:52; targetSdkVersion:36; callerTargetSdkVersion:36; startForegroundCount:0; bindFromPackage:null: isBindService:false]
+11-25 23:01:35.860  2523  2544 D nativeloader: Load /data/app/~~0Eh_ohAATRxrLAouh00sYA==/com.lagradost.cloudstream3.prerelease.debug-3tiZHq41gITjC21szabSAw==/lib/x86_64/libmedia3ext.so using class loader ns clns-9 (caller=/data/app/~~0Eh_ohAATRxrLAouh00sYA==/com.lagradost.cloudstream3.prerelease.debug-3tiZHq41gITjC21szabSAw==/base.apk!classes20.dex): ok
+11-25 23:01:35.867   656  1120 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=BUFFERING(6), position=0, buffered position=0, speed=0.0, updated=353511, actions=7339995, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.896  2523  2544 I rerelease.debug: hiddenapi: Accessing hidden method Landroid/media/AudioTrack;->getLatency()I (runtime_flags=0, domain=platform, api=unsupported) from Landroidx/media3/exoplayer/audio/AudioTrackPositionTracker; (domain=app) using reflection: allowed
+11-25 23:01:35.903   656   656 D MediaSessionService: Media button session is changed to com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0)
+11-25 23:01:35.907   656  1723 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=BUFFERING(6), position=19999, buffered position=19999, speed=0.0, updated=353550, actions=7339995, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.909   656  1120 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=BUFFERING(6), position=19999, buffered position=19999, speed=0.0, updated=353556, actions=7339995, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.913   656  1120 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=BUFFERING(6), position=19999, buffered position=19999, speed=0.0, updated=353559, actions=7339995, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.915   656  1120 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=BUFFERING(6), position=19999, buffered position=19999, speed=0.0, updated=353562, actions=7339995, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.916   656  1120 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=BUFFERING(6), position=19999, buffered position=19999, speed=0.0, updated=353563, actions=7339995, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.921   656  1120 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=PLAYING(3), position=19999, buffered position=20000, speed=1.0, updated=353567, actions=7339995, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.926   656  1120 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=PLAYING(3), position=20009, buffered position=20000, speed=1.0, updated=353573, actions=7339995, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.928   656  1723 I MediaSessionService: tempAllowlistTargetPkgIfPossible callingPackage:com.android.bluetooth targetPackage:com.lagradost.cloudstream3.prerelease.debug reason:MediaSessionRecord:android.support.v4.media.session.command.GET_EXTRA_BINDER [WIU] [FGS]
+11-25 23:01:35.943   656  1723 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=STOPPED(1), position=20009, buffered position=20000, speed=0.0, updated=353590, actions=7339997, custom actions=[], active item id=0, error=null}
+11-25 23:01:35.946   656  1723 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=STOPPED(1), position=20009, buffered position=20000, speed=0.0, updated=353592, actions=7339997, custom actions=[], active item id=0, error=null}
+11-25 23:01:36.578   994  1190 D MediaResumeListener: Testing if we can connect to ComponentInfo{com.lagradost.cloudstream3.prerelease.debug/com.lagradost.cloudstream3.services.CarMediaService}
+11-25 23:01:36.589  2523  2523 I MediaBrowserService: No root for client com.android.systemui from service android.service.media.MediaBrowserService$ServiceState
+11-25 23:01:36.597   994  1190 E MediaBrowser: onConnectFailed for ComponentInfo{com.lagradost.cloudstream3.prerelease.debug/com.lagradost.cloudstream3.services.CarMediaService}
+11-25 23:01:36.598   994  1190 D ResumeMediaBrowser: Connection failed for ComponentInfo{com.lagradost.cloudstream3.prerelease.debug/com.lagradost.cloudstream3.services.CarMediaService}
+11-25 23:01:36.598   994  1190 E MediaResumeListener: Cannot resume with ComponentInfo{com.lagradost.cloudstream3.prerelease.debug/com.lagradost.cloudstream3.services.CarMediaService}
+11-25 23:01:38.806  2523  2539 I CARCHECK: PLAY dl:2002 state=1 position=20009 error='null'
+11-25 23:01:38.808   656   725 D MediaSessionService: onSessionPlaybackStateChanged: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0) playbackState=PlaybackState {state=NONE(0), position=20009, buffered position=20009, speed=0.0, updated=356454, actions=7339997, custom actions=[], active item id=0, error=null}
+11-25 23:01:38.808   656   725 I MediaFocusControl: abandonAudioFocus() from uid/pid 10150/2523 clientId=android.media.AudioManager@2091b53androidx.media3.common.audio.AudioFocusManager$$ExternalSyntheticLambda0@9661c90 callingPack=com.lagradost.cloudstream3.prerelease.debug
+11-25 23:01:39.807  2523  2539 I CARCHECK: ===== 2: nothing to resume (expect only Downloads)
+11-25 23:01:39.809  2523  2523 I CarMediaService: Media browser com.lagradost.cloudstream3.prerelease.debug trusted=true allowed=true
+11-25 23:01:39.810  2523  2539 I CARCHECK: connected root=root
+11-25 23:01:39.814  2523  2539 I CARCHECK: ROOT has 1 children
+11-25 23:01:39.814  2523  2539 I CARCHECK:   TAB id=tab_downloads title='Downloads' sub='null' browsable=true playable=false icon=null
+11-25 23:01:39.818  2523  2539 I CARCHECK:     -> 2 items
+11-25 23:01:39.818  2523  2539 I CARCHECK:     ITEM id=title:1001 title='Dexter' sub='null' browsable=true playable=false icon=null
+11-25 23:01:39.822  2523  2539 I CARCHECK:       SUB id=dl:2001 title='S1:E1 · Episode 1' sub='Dexter' browsable=false playable=true icon=null
+11-25 23:01:39.822  2523  2539 I CARCHECK:       SUB id=dl:2002 title='S1:E2 · Episode 2' sub='Dexter' browsable=false playable=true icon=null
+11-25 23:01:39.822  2523  2539 I CARCHECK:     ITEM id=dl:2003 title='The Odyssey' sub='The Odyssey' browsable=false playable=true icon=null
+11-25 23:01:40.322  2523  2539 I CARCHECK: ===== 3: no downloads (expect one hint item)
+11-25 23:01:40.323  2523  2523 I CarMediaService: Media browser com.lagradost.cloudstream3.prerelease.debug trusted=true allowed=true
+11-25 23:01:40.324  2523  2539 I CARCHECK: connected root=root
+11-25 23:01:40.326  2523  2539 I CARCHECK: ROOT has 1 children
+11-25 23:01:40.326  2523  2539 I CARCHECK:   TAB id=info_empty title='No downloads yet' sub='Download episodes or movies in CloudStream first' browsable=false playable=false icon=null
+11-25 23:01:40.826  2523  2539 I CARCHECK: RESULT done
+11-25 23:01:40.837  2512  2512 I AndroidRuntime: VM exiting with result code 0.
+11-25 23:01:40.859   656  1876 I MediaSessionStack: removeSession | record: com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0)
+11-25 23:01:40.860   656  1876 D MediaSessionService: Media button session is changed to null
+11-25 23:01:40.860   656  1876 D MediaSessionService: destroySessionLocked: record=com.lagradost.cloudstream3.prerelease.debug/androidx.media3.session.id.cs3_car/7 (userId=0)
+11-25 23:01:40.862   656  1753 W MediaSessionRecord: error unlinking to binder death
+11-25 23:01:40.862   656  1753 W MediaSessionRecord: java.util.NoSuchElementException: Death link does not exist (NAME_NOT_FOUND)
+11-25 23:01:40.862   656  1753 W MediaSessionRecord: 	at android.os.BinderProxy.unlinkToDeathNative(Native Method)
+11-25 23:01:40.862   656  1753 W MediaSessionRecord: 	at android.os.BinderProxy.unlinkToDeath(BinderProxy.java:646)
+11-25 23:01:40.862   656  1753 W MediaSessionRecord: 	at com.android.server.media.MediaSessionRecord$ControllerStub.unregisterCallback(MediaSessionRecord.java:1778)
+11-25 23:01:40.862   656  1753 W MediaSessionRecord: 	at android.media.session.ISessionController$Stub.onTransact(ISessionController.java:396)
+11-25 23:01:40.862   656  1753 W MediaSessionRecord: 	at android.os.Binder.execTransactInternal(Binder.java:1421)
+11-25 23:01:40.862   656  1753 W MediaSessionRecord: 	at android.os.Binder.execTransact(Binder.java:1365)
+11-25 23:01:40.876  1122  1122 E MediaControllerCompat: 	at android.support.v4.media.session.IMediaSession$Stub$Proxy.unregisterCallbackListener(IMediaSession.java:727)
+11-25 23:01:40.876  1122  1122 E MediaControllerCompat: 	at android.media.session.MediaSessionManager$SessionsChangedWrapper.callOnActiveSessionsChangedListener(MediaSessionManager.java:1287)
+11-25 23:01:40.876  1122  1122 E MediaControllerCompat: 	at android.media.session.MediaSessionManager$SessionsChangedWrapper.-$$Nest$mcallOnActiveSessionsChangedListener(Unknown Source:0)
+11-25 23:01:40.876  1122  1122 E MediaControllerCompat: 	at android.media.session.MediaSessionManager$SessionsChangedWrapper$1.lambda$onActiveSessionsChanged$0(MediaSessionManager.java:1272)
+11-25 23:01:40.876  1122  1122 E MediaControllerCompat: 	at android.media.session.MediaSessionManager$SessionsChangedWrapper$1.$r8$lambda$v-zQmMXFQ9fkWva-bGATn7CMvwg(Unknown Source:0)
+11-25 23:01:40.876  1122  1122 E MediaControllerCompat: 	at android.media.session.MediaSessionManager$SessionsChangedWrapper$1$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
