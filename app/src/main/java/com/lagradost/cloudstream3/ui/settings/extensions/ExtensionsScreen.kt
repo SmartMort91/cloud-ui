@@ -173,6 +173,7 @@ import com.mihon.presentation.secondaryItemAlpha
 import com.mihon.presentation.settings.LocalPreferenceHighlighted
 import com.mihon.presentation.settings.LocalPreferenceMinHeight
 import com.mihon.presentation.settings.settingsCard
+import com.mihon.presentation.settings.settingsOverlayCard
 import com.mihon.presentation.settings.widget.BasePreferenceWidget
 import com.mihon.presentation.settings.widget.PrefsHorizontalPadding
 import com.mihon.presentation.settings.widget.TextPreferenceWidget
@@ -1620,7 +1621,7 @@ object ExtensionsScreen : Screen {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 8.dp)
-                .settingsCard(RoundedCornerShape(22.dp))
+                .settingsOverlayCard(RoundedCornerShape(22.dp))
                 .clickable(
                     enabled = isLayout(PHONE),
                     onClick = {

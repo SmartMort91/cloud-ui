@@ -173,8 +173,8 @@
     <color name="GlassIcon">#E6EEFF</color>
     <color name="GlassText">#F4F7FF</color>
     <color name="GlassGrayText">#B7C3E0</color>
-    <color name="GlassSheet">#E61A2250</color>
-    <color name="GlassDialog">#F2101636</color>
+    <color name="GlassSheet">#F51A2250</color>
+    <color name="GlassDialog">#FA101636</color>
     <color name="GlassDeep">#0A0F26</color>
 
     <!-- More themes -->
@@ -206,10 +206,10 @@
     <color name="GraphiteTextColor">#E8EAED</color>
     <color name="GraphiteGrayTextColor">#8E959C</color>
     <color name="GraphiteIconColor">#AEB7C0</color>
-    <color name="AuroraDialog">#F2062A2A</color>
-    <color name="AuroraSheet">#E60D3A3A</color>
+    <color name="AuroraDialog">#FA062A2A</color>
+    <color name="AuroraSheet">#F50D3A3A</color>
     <color name="AuroraBar">#E6082A2A</color>
-    <color name="SunsetGlassDialog">#F2220B2B</color>
-    <color name="SunsetGlassSheet">#E64A1A55</color>
+    <color name="SunsetGlassDialog">#FA220B2B</color>
+    <color name="SunsetGlassSheet">#F54A1A55</color>
     <color name="SunsetGlassBar">#E6280D30</color>
 </resources>

@@ -16,6 +16,7 @@
             android:elevation="0dp"
             app:cardCornerRadius="@dimen/rounded_image_radius"
             app:cardBackgroundColor="?attr/boxItemBackground"
+            app:cardElevation="0dp"
             android:clickable="true"
             android:focusable="true">
         <!-- USING CROP RATIO (182/268), centerCrop for fill -->

@@ -11,6 +11,7 @@
     android:foreground="@drawable/outline_drawable"
     android:nextFocusRight="@id/download_button"
     app:cardBackgroundColor="?attr/boxItemBackground"
+    app:cardElevation="0dp"
 
     app:cardCornerRadius="@dimen/rounded_image_radius">
 
@@ -29,8 +30,8 @@
             android:orientation="horizontal">
             <!--app:cardCornerRadius="@dimen/roundedImageRadius"-->
             <androidx.cardview.widget.CardView
-                android:layout_width="168dp"
-                android:layout_height="96dp"
+                android:layout_width="152dp"
+                android:layout_height="86dp"
                 android:foreground="@drawable/outline_drawable"
                 app:cardCornerRadius="14dp">
 
@@ -86,8 +87,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:layout_marginStart="15dp"
-                android:layout_marginEnd="50dp"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="46dp"
                 android:orientation="vertical">
 
                 <LinearLayout
@@ -122,16 +123,18 @@
                         android:id="@+id/episode_rating"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="10dp"
+                        android:layout_marginEnd="8dp"
                         android:textColor="?attr/grayTextColor"
+                        android:textSize="13sp"
                         tools:text="Rated: 8.8" />
 
                     <TextView
                         android:id="@+id/episode_runtime"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="10dp"
+                        android:layout_marginEnd="8dp"
                         android:textColor="?attr/grayTextColor"
+                        android:textSize="13sp"
                         tools:text="80min" />
 
                 </LinearLayout>
@@ -141,6 +144,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="?attr/grayTextColor"
+                    android:textSize="13sp"
                     tools:text="15 Apr 2024" />
 
             </LinearLayout>
