@@ -45,8 +45,10 @@ import java.util.concurrent.Executors
  * before anything can play.
  *
  * The browse tree is:
- *  - Continue watching: downloaded titles that are partly watched
+ *  - Continue watching: downloaded titles that are partly watched (only listed when there are any,
+ *    Android Auto opens on the first tab and an empty first tab looks like a broken app)
  *  - Downloads: every finished download, series are folders of episodes
+ *  - With no finished downloads there is a single hint line instead of two empty tabs
  *
  * The position is stored with [DataStoreHelper.setViewPos], the same place the normal player uses.
  */
@@ -193,7 +195,9 @@ class CarMediaService : MediaLibraryService() {
             // user has downloaded, so only let the car/assistant/system and ourselves connect
             val allowed = controller.isTrusted ||
                     controller.packageName == packageName ||
-                    controller.packageName in ALLOWED_CONTROLLERS
+                    controller.packageName in ALLOWED_CONTROLLERS ||
+                    ALLOWED_PREFIXES.any { controller.packageName.startsWith(it) }
+            Log.i(TAG, "Media browser ${controller.packageName} trusted=${controller.isTrusted} allowed=$allowed")
             if (!allowed) {
                 Log.w(TAG, "Rejected media browser from ${controller.packageName}")
                 return MediaSession.ConnectionResult.reject()
@@ -228,6 +232,8 @@ class CarMediaService : MediaLibraryService() {
                         TAB_DOWNLOADS,
                         getString(R.string.car_tab_downloads)
                     )
+
+                    mediaId == INFO_EMPTY -> infoItem()
 
                     mediaId.startsWith(TITLE_PREFIX) -> {
                         val parentId = mediaId.removePrefix(TITLE_PREFIX).toIntOrNull()
@@ -324,13 +330,9 @@ class CarMediaService : MediaLibraryService() {
 
     private fun children(parentId: String): List<MediaItem> {
         return when {
-            parentId == ROOT_ID -> listOf(
-                folderItem(TAB_CONTINUE, getString(R.string.car_tab_continue)),
-                folderItem(TAB_DOWNLOADS, getString(R.string.car_tab_downloads)),
-            )
-
-            parentId == TAB_CONTINUE -> continueItems()
-            parentId == TAB_DOWNLOADS -> downloadItems()
+            parentId == ROOT_ID -> rootItems()
+            parentId == TAB_CONTINUE -> continueItems(loadDownloads())
+            parentId == TAB_DOWNLOADS -> downloadItems(loadDownloads())
             parentId.startsWith(TITLE_PREFIX) -> {
                 val id = parentId.removePrefix(TITLE_PREFIX).toIntOrNull() ?: return emptyList()
                 loadDownloads()
@@ -346,14 +348,27 @@ class CarMediaService : MediaLibraryService() {
         }
     }
 
-    private fun continueItems(): List<MediaItem> {
+    private fun rootItems(): List<MediaItem> {
+        val downloads = loadDownloads()
+        if (downloads.isEmpty()) return listOf(infoItem())
+
+        val tabs = ArrayList<MediaItem>(2)
+        // Resume first when there is something to resume, that is what people open the car for
+        if (continueItems(downloads).isNotEmpty()) {
+            tabs += folderItem(TAB_CONTINUE, getString(R.string.car_tab_continue))
+        }
+        tabs += folderItem(TAB_DOWNLOADS, getString(R.string.car_tab_downloads))
+        return tabs
+    }
+
+    private fun continueItems(downloads: List<Entry>): List<MediaItem> {
         // Same "last watched" times the home screen uses, so the order matches the phone
         val lastWatched = DataStoreHelper.getAllResumeStateIds()
             ?.mapNotNull { id -> DataStoreHelper.getLastWatched(id)?.let { id to it.updateTime } }
             ?.toMap()
             ?: emptyMap()
 
-        return loadDownloads()
+        return downloads
             .mapNotNull { entry ->
                 val pos = DataStoreHelper.getViewPos(entry.episode.id)
                 if (pos != null && isResumable(pos)) entry to pos else null
@@ -366,8 +381,8 @@ class CarMediaService : MediaLibraryService() {
             }
     }
 
-    private fun downloadItems(): List<MediaItem> {
-        return loadDownloads()
+    private fun downloadItems(downloads: List<Entry>): List<MediaItem> {
+        return downloads
             .groupBy { it.episode.parentId }
             .values
             .sortedBy { (it.first().header?.name ?: it.first().episode.name ?: "").lowercase() }
@@ -401,6 +416,21 @@ class CarMediaService : MediaLibraryService() {
                     .setIsBrowsable(true)
                     .setIsPlayable(false)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
+                    .build()
+            )
+            .build()
+    }
+
+    /** Shown instead of the tabs when nothing is downloaded, so the car screen is never just blank */
+    private fun infoItem(): MediaItem {
+        return MediaItem.Builder()
+            .setMediaId(INFO_EMPTY)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(getString(R.string.car_no_downloads))
+                    .setSubtitle(getString(R.string.car_no_downloads_hint))
+                    .setIsBrowsable(false)
+                    .setIsPlayable(false)
                     .build()
             )
             .build()
@@ -473,6 +503,7 @@ class CarMediaService : MediaLibraryService() {
         private const val ROOT_ID = "root"
         private const val TAB_CONTINUE = "tab_continue"
         private const val TAB_DOWNLOADS = "tab_downloads"
+        private const val INFO_EMPTY = "info_empty"
         private const val TITLE_PREFIX = "title:"
         private const val EPISODE_PREFIX = "dl:"
 
@@ -487,6 +518,14 @@ class CarMediaService : MediaLibraryService() {
             "com.google.android.googlequicksearchbox",
             "com.google.android.carassistant",
             "com.android.bluetooth",
+            // Android Auto runs its media UI inside Google Play services on some versions
+            "com.google.android.gms",
+        )
+
+        /** Other Android Auto / Google car components, so a renamed process still gets in */
+        private val ALLOWED_PREFIXES = listOf(
+            "com.google.android.projection.",
+            "com.google.android.apps.automotive.",
         )
     }
 }
